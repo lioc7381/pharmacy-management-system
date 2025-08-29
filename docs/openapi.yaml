@@ -1,0 +1,1624 @@
+openapi: 3.0.0
+info:
+  title: Pharmacy Management System API
+  version: 1.0.0
+  description: >
+    The official REST API for the Pharmacy Management System. 
+
+    This API provides endpoints for managing users, medications, prescriptions,
+    and orders.
+
+    Authentication is handled via bearer tokens issued by Laravel Sanctum.
+servers:
+  - url: 'http://localhost:8000/api'
+    description: Local Development Server
+paths:
+  /register:
+    post:
+      summary: Register a new client account
+      tags:
+        - Authentication
+      description: Creates a new user account with the 'client' role by default.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  example: John Doe
+                email:
+                  type: string
+                  format: email
+                  example: john.doe@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: password123
+      responses:
+        '201':
+          description: >-
+            Account created successfully. Returns the new user object and a
+            Sanctum token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                    example: 2|ghijklm789012
+        '422':
+          description: 'Validation error (e.g., email already exists, weak password).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /login:
+    post:
+      summary: Authenticate a user
+      tags:
+        - Authentication
+      description: >-
+        Validates user credentials and returns a plain-text Sanctum API token
+        for subsequent requests.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john.doe@example.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '200':
+          description: Login successful. The response body contains the API token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: 1|abcdef123456
+        '401':
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /logout:
+    post:
+      summary: Log out the current user
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      description: Revokes the user's current Sanctum API token on the server.
+      responses:
+        '204':
+          description: Logout successful. No content returned.
+        '401':
+          description: Unauthenticated.
+  /medications:
+    get:
+      summary: Search for medications
+      tags:
+        - Medications
+      description: Publicly accessible endpoint to search the medication catalog by name.
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: The name of the medication to search for.
+      responses:
+        '200':
+          description: >-
+            A list of matching medications. Returns an empty array if no results
+            are found.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Medication'
+    post:
+      summary: Add a new medication
+      tags:
+        - Medications
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to add a new medication to the catalog.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewMedication'
+      responses:
+        '201':
+          description: Medication created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Medication'
+        '401':
+          description: Unauthenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden. User does not have 'Manager' role.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 'Validation error (e.g., duplicate medication name, invalid price).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/medications/{id}':
+    put:
+      summary: Update a medication
+      tags:
+        - Medications
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to update an existing medication's details.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the medication to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMedication'
+      responses:
+        '200':
+          description: Medication updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Medication'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Medication not found.
+        '422':
+          description: >-
+            Validation error, such as attempting to create a duplicate
+            medication (name + strength_form).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: The given data was invalid.
+                errors:
+                  name:
+                    - >-
+                      A medication with this name and strength/form already
+                      exists.
+    delete:
+      summary: Disable a medication
+      tags:
+        - Medications
+      security:
+        - bearerAuth: []
+      description: >-
+        Manager-only endpoint to perform a soft delete on a medication by
+        setting its status to 'disabled'.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the medication to disable.
+      responses:
+        '204':
+          description: Medication disabled successfully. No content returned.
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Medication not found.
+        '409':
+          description: >-
+            Conflict. Cannot disable a medication that is part of an active
+            order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Cannot disable a medication that is part of an active order.
+  /medications/low-stock:
+    get:
+      summary: Get low stock report
+      tags:
+        - Medications
+      security:
+        - bearerAuth: []
+      description: >-
+        Manager-only endpoint to retrieve a list of all medications where the
+        current quantity is at or below the minimum threshold.
+      responses:
+        '200':
+          description: A list of low-stock medications.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Medication'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+  /prescriptions:
+    get:
+      summary: Get pending prescriptions
+      tags:
+        - Prescriptions
+      security:
+        - bearerAuth: []
+      description: >-
+        Staff-only endpoint to retrieve a list of prescriptions awaiting
+        processing.
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending
+            default: pending
+          description: Filter prescriptions by status.
+      responses:
+        '200':
+          description: A list of pending prescriptions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prescription'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not authorized staff.
+    post:
+      summary: Submit a new prescription
+      tags:
+        - Prescriptions
+      security:
+        - bearerAuth: []
+      description: Client-only endpoint to upload a prescription image for processing.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: 'The prescription image file (JPG, PNG, max 5MB).'
+      responses:
+        '201':
+          description: >-
+            Prescription submitted successfully. Returns the new prescription
+            object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a 'client'.
+        '422':
+          description: 'Validation error (e.g., invalid file type, file too large).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/prescriptions/{id}/process':
+    put:
+      summary: Process or reject a prescription
+      tags:
+        - Prescriptions
+      security:
+        - bearerAuth: []
+      description: >
+        Salesperson-only endpoint to perform an action on a pending
+        prescription.
+
+        - To **process**, provide a list of medication items. This creates a new
+        order.
+
+        - To **reject**, provide a status of 'rejected' and a reason.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the prescription to process.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/ProcessPrescriptionRequest'
+                - $ref: '#/components/schemas/RejectPrescriptionRequest'
+      responses:
+        '200':
+          description: Prescription rejected successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+        '201':
+          description: Prescription processed and order created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessPrescriptionResponse'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a 'salesperson'.
+        '404':
+          description: Prescription not found.
+        '409':
+          description: >-
+            Conflict (e.g., insufficient stock for an item, or prescription
+            already processed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 'Validation error (e.g., missing rejection reason).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /orders:
+    get:
+      summary: Get a list of orders (Staff)
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Staff-only endpoint to retrieve a list of orders. Can be filtered by
+        status.
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - in_preparation
+              - ready_for_delivery
+              - completed
+              - cancelled
+              - failed_delivery
+          description: Filter orders by their current status.
+      responses:
+        '200':
+          description: A list of orders matching the filter.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not authorized staff.
+  '/orders/{id}':
+    get:
+      summary: Get a single order by ID (Staff)
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Staff-only endpoint to retrieve the full details of a single order,
+        including its line items.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the order to retrieve.
+      responses:
+        '200':
+          description: The detailed order object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Order not found.
+    put:
+      summary: Modify an order's items
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Salesperson-only endpoint to modify the items of an order that is in the
+        'in_preparation' state.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the order to modify.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderRequest'
+      responses:
+        '200':
+          description: Order updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: >-
+            Forbidden. User is not a salesperson or order is not in a modifiable
+            state.
+        '404':
+          description: Order not found.
+        '409':
+          description: 'Conflict (e.g., insufficient stock for an item).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/orders/{id}/status':
+    put:
+      summary: Update an order's status
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Staff-only endpoint to transition an order to a new status (e.g.,
+        prepare, complete, cancel).
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the order to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderStatusRequest'
+      responses:
+        '200':
+          description: Order status updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: >-
+            Forbidden. User role not permitted to perform this status
+            transition.
+        '404':
+          description: Order not found.
+        '409':
+          description: >-
+            Conflict. The requested status transition is not valid from the
+            order's current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/orders/{id}/assign':
+    post:
+      summary: Assign an order to a delivery person
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Salesperson-only endpoint to assign an order to a specific delivery
+        person.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the order to assign.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignOrderRequest'
+      responses:
+        '200':
+          description: Order assigned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a salesperson.
+        '404':
+          description: Order or Delivery User not found.
+        '422':
+          description: >-
+            Validation error (e.g., the provided user ID does not have the
+            'delivery' role or is disabled).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: The given data was invalid.
+                errors:
+                  delivery_user_id:
+                    - >-
+                      The selected user is disabled and cannot be assigned
+                      orders.
+  /my-orders:
+    get:
+      summary: Get my orders (Client)
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Client-only endpoint that returns a list of orders belonging to the
+        authenticated user.
+      responses:
+        '200':
+          description: A list of the user's orders.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+  '/my-orders/{id}':
+    get:
+      summary: Get a single one of my orders (Client)
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Client-only endpoint that returns a single order, if and only if it
+        belongs to the authenticated user.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the order to retrieve.
+      responses:
+        '200':
+          description: The detailed order object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. The user does not own this order.
+        '404':
+          description: Order not found.
+  /clients:
+    get:
+      summary: Get a list of clients
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to retrieve and search for client accounts.
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search clients by name or email.
+      responses:
+        '200':
+          description: A list of client accounts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a manager.
+  '/clients/{id}':
+    get:
+      summary: Get a single client
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to retrieve a single client's details.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The client's user object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Client not found.
+    put:
+      summary: Update a client account
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to update a client's account details.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClientRequest'
+      responses:
+        '200':
+          description: Client updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Client not found.
+        '422':
+          description: 'Validation error (e.g., email already in use).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Disable a client account
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to soft-delete a client account.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Client account disabled successfully.
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Client not found.
+        '409':
+          description: Conflict. Cannot disable a client with active orders.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /employees:
+    get:
+      summary: Get a list of employees
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to retrieve and search for employee accounts.
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search employees by name or email.
+      responses:
+        '200':
+          description: A list of employee accounts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+    post:
+      summary: Add a new employee
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: >-
+        Manager-only endpoint to create a new staff account with a specific
+        role. This is the only way to create non-client users.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewEmployeeRequest'
+      responses:
+        '201':
+          description: Employee account created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '422':
+          description: 'Validation error (e.g., email in use, invalid role).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/employees/{id}':
+    get:
+      summary: Get a single employee
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to retrieve a single employee's details.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The employee's user object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Employee not found.
+    put:
+      summary: Update an employee account
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: >-
+        Manager-only endpoint to update an employee's details, including their
+        role.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmployeeRequest'
+      responses:
+        '200':
+          description: Employee updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Employee not found.
+        '422':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Disable an employee account
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to soft-delete an employee account.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Employee account disabled successfully.
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Employee not found.
+        '409':
+          description: Conflict. Cannot disable an employee with active assignments.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /advice-requests:
+    get:
+      summary: Get advice requests
+      tags:
+        - Advice System
+      security:
+        - bearerAuth: []
+      description: >-
+        Pharmacist-only endpoint to retrieve a list of advice requests,
+        typically filtered for pending ones.
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending
+              - responded
+              - rejected
+            default: pending
+          description: Filter requests by status.
+      responses:
+        '200':
+          description: A list of advice requests.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdviceRequest'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a pharmacist.
+    post:
+      summary: Submit an advice request
+      tags:
+        - Advice System
+      security:
+        - bearerAuth: []
+      description: >-
+        Client-only endpoint to submit a health-related question to a
+        pharmacist.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewAdviceRequest'
+      responses:
+        '201':
+          description: Request submitted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdviceRequest'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a client.
+        '422':
+          description: 'Validation error (e.g., question is empty).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/advice-requests/{id}':
+    put:
+      summary: Respond to or reject an advice request
+      tags:
+        - Advice System
+      security:
+        - bearerAuth: []
+      description: >-
+        Pharmacist-only endpoint to perform an action on a pending advice
+        request (either respond or reject).
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the advice request to action.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/RespondToAdviceRequest'
+                - $ref: '#/components/schemas/RejectAdviceRequest'
+      responses:
+        '200':
+          description: Action completed successfully. Returns the updated advice request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdviceRequest'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a pharmacist.
+        '404':
+          description: Advice request not found.
+        '409':
+          description: >-
+            Conflict. The request has already been handled by another
+            pharmacist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 'Validation error (e.g., missing rejection reason).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /notifications:
+    get:
+      summary: Get my notifications
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      description: >-
+        Retrieves a list of all notifications for the authenticated user, with
+        the newest first.
+      responses:
+        '200':
+          description: A list of notifications.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthenticated.
+  /notifications/mark-all-as-read:
+    put:
+      summary: Mark all notifications as read
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      description: Marks all unread notifications for the authenticated user as read.
+      responses:
+        '204':
+          description: All notifications marked as read successfully. No content returned.
+        '401':
+          description: Unauthenticated.
+  '/notifications/{id}/read':
+    put:
+      summary: Mark a single notification as read
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      description: Marks a specific notification as read for the authenticated user.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the notification to mark as read.
+      responses:
+        '200':
+          description: >-
+            Notification marked as read successfully. Returns the updated
+            notification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. The user does not own this notification.
+        '404':
+          description: Notification not found.
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        role:
+          type: string
+          example: client
+        status:
+          type: string
+          example: active
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          description: Contains a list of validation errors for each field.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email:
+              - The email has already been taken.
+    Medication:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 101
+        name:
+          type: string
+          example: Paracetamol
+        strength_form:
+          type: string
+          example: 500mg Tablet
+        description:
+          type: string
+          example: For relief of mild to moderate pain.
+        price:
+          type: number
+          format: float
+          example: 15.99
+        current_quantity:
+          type: integer
+          example: 250
+        minimum_threshold:
+          type: integer
+          example: 50
+        category:
+          type: string
+          enum:
+            - Pain Relief
+            - Antibiotics
+            - Vitamins
+            - Cold & Flu
+            - Skincare
+          example: Pain Relief
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+          example: active
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    NewMedication:
+      type: object
+      required:
+        - name
+        - strength_form
+        - description
+        - price
+        - current_quantity
+        - category
+      properties:
+        name:
+          type: string
+        strength_form:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+        current_quantity:
+          type: integer
+        minimum_threshold:
+          type: integer
+        category:
+          type: string
+          enum:
+            - Pain Relief
+            - Antibiotics
+            - Vitamins
+            - Cold & Flu
+            - Skincare
+    UpdateMedication:
+      type: object
+      properties:
+        name:
+          type: string
+        strength_form:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+        current_quantity:
+          type: integer
+        minimum_threshold:
+          type: integer
+        category:
+          type: string
+          enum:
+            - Pain Relief
+            - Antibiotics
+            - Vitamins
+            - Cold & Flu
+            - Skincare
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+    Prescription:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 54321
+        client_id:
+          type: integer
+          example: 1
+        image_path:
+          type: string
+          example: /storage/prescriptions/1/2024/05/abc123def456.jpg
+        status:
+          type: string
+          enum:
+            - pending
+            - processed
+            - rejected
+          example: pending
+        processed_by:
+          type: integer
+          nullable: true
+          example: 12
+        rejection_reason:
+          type: string
+          nullable: true
+        reference_number:
+          type: string
+          example: P1684321
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ProcessPrescriptionRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - medication_id
+              - quantity
+            properties:
+              medication_id:
+                type: integer
+                example: 101
+              quantity:
+                type: integer
+                example: 30
+    RejectPrescriptionRequest:
+      type: object
+      required:
+        - status
+        - rejection_reason
+      properties:
+        status:
+          type: string
+          enum:
+            - rejected
+        rejection_reason:
+          type: string
+          example: The image provided is blurry and unreadable.
+    ProcessPrescriptionResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Prescription processed and order created.
+        order_id:
+          type: integer
+          example: 987
+        order_status:
+          type: string
+          example: in_preparation
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 987
+        client_id:
+          type: integer
+          example: 1
+        prescription_id:
+          type: integer
+          nullable: true
+          example: 54321
+        total_amount:
+          type: number
+          format: float
+          example: 47.97
+        status:
+          type: string
+          enum:
+            - in_preparation
+            - ready_for_delivery
+            - completed
+            - cancelled
+            - failed_delivery
+          example: in_preparation
+        assigned_delivery_user_id:
+          type: integer
+          nullable: true
+          example: 25
+        cancellation_reason:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        order_id:
+          type: integer
+        medication_id:
+          type: integer
+        quantity:
+          type: integer
+        unit_price:
+          type: number
+          format: float
+    UpdateOrderRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - medication_id
+              - quantity
+            properties:
+              medication_id:
+                type: integer
+              quantity:
+                type: integer
+    UpdateOrderStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ready_for_delivery
+            - completed
+            - cancelled
+            - failed_delivery
+        cancellation_reason:
+          type: string
+          description: Required when status is 'cancelled'.
+    AssignOrderRequest:
+      type: object
+      required:
+        - delivery_user_id
+      properties:
+        delivery_user_id:
+          type: integer
+          description: The ID of the user with the 'delivery' role.
+    UpdateClientRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone_number:
+          type: string
+        address:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+    NewEmployeeRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - role
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        role:
+          type: string
+          enum:
+            - pharmacist
+            - salesperson
+            - delivery
+            - manager
+    UpdateEmployeeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+            - pharmacist
+            - salesperson
+            - delivery
+            - manager
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+    AdviceRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        client_id:
+          type: integer
+          example: 1
+        question:
+          type: string
+          example: Is it safe to take this medication with grapefruit juice?
+        status:
+          type: string
+          enum:
+            - pending
+            - responded
+            - rejected
+          example: pending
+        response:
+          type: string
+          nullable: true
+          example: >-
+            It is generally not recommended. Please consult the medication's
+            leaflet or call us for more details.
+        responder_id:
+          type: integer
+          nullable: true
+          example: 15
+        rejection_reason:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    NewAdviceRequest:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+    RespondToAdviceRequest:
+      type: object
+      required:
+        - response
+      properties:
+        response:
+          type: string
+    RejectAdviceRequest:
+      type: object
+      required:
+        - status
+        - rejection_reason
+      properties:
+        status:
+          type: string
+          enum:
+            - rejected
+        rejection_reason:
+          type: string
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Order Status Update
+        message:
+          type: string
+          example: 'Your order #987 is now ready for delivery.'
+        type:
+          type: string
+          enum:
+            - order_status
+            - prescription_update
+            - advice_response
+            - system_alert
+          example: order_status
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        created_at:
+          type: string
+          format: date-time
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT # Note: Sanctum tokens are not JWTs, but this is a common way to represent them.
