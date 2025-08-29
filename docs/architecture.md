@@ -87,17 +87,17 @@ This section serves as the **definitive and single source of truth** for all tec
 
 | Category | Technology | Version | Purpose | Rationale |
 | :--- | :--- | :--- | :--- | :--- |
-| **Frontend Language** | Dart | 3.4.x | Primary language for Flutter development. | Required by the Flutter framework. |
-| **Frontend Framework**| Flutter | 3.22.x | UI toolkit for building the Android application. | A core, non-negotiable project requirement. |
+| **Frontend Language** | Dart | 3.9.x | Primary language for Flutter development. | Required by the Flutter framework. |
+| **Frontend Framework**| Flutter | 3.35.x | UI toolkit for building the Android application. | A core, non-negotiable project requirement. |
 | **UI Component Lib** | Material Design 3 | (Built-in) | Provides the foundational UI components and styling. | Specified in the UI/UX spec for a modern, dark theme. |
 | **State Management** | Provider | 6.1.x | Manages application state on the frontend. | Explicitly required in the technical specifications. |
-| **Backend Language** | PHP | 8.3.x | Primary language for the Laravel backend. | Required by the Laravel framework. |
-| **Backend Framework**| Laravel | 11.x | Provides the core structure for the REST API. | A core, non-negotiable project requirement. |
+| **Backend Language** | PHP | 8.2.x | Primary language for the Laravel backend. | Required by the Laravel framework. |
+| **Backend Framework**| Laravel | 12.x | Provides the core structure for the REST API. | A core, non-negotiable project requirement. |
 | **API Style** | REST | (Standard) | Defines the communication protocol between frontend and backend. | Specified in the technical requirements. |
 | **Database** | SQLite | 3.x | The exclusive database for all application data. | A critical, non-negotiable constraint for portability. |
 | **File Storage** | Local Filesystem | N/A | Stores uploaded prescription images on the server. | Simplest approach for a local-only, zero-budget project. |
 | **Authentication** | Laravel Sanctum | 4.x | Manages API token-based authentication. | Explicitly required in the technical specifications. |
-| **Routing** | go_router | 14.1.x | Manages declarative, type-safe routing and navigation. | Chosen for its robust, centralized configuration, type-safe navigation, and built-in support for authentication guards, aligning with the architecture's security and maintainability goals. |
+| **Routing** | go_router | 16.1.x | Manages declarative, type-safe routing and navigation. | Chosen for its robust, centralized configuration, type-safe navigation, and built-in support for authentication guards, aligning with the architecture's security and maintainability goals. |
 | **Frontend Testing** | flutter_test | (SDK) | For widget and unit testing the Flutter application. | Standard, built-in testing framework for Flutter. |
 | **Backend Testing** | PHPUnit | 11.x | For unit and feature testing the Laravel API. | Standard, built-in testing framework for Laravel. |
 | **E2E Testing** | integration_test | (SDK) | For full-stack, end-to-end user journey testing. | Flutter's official package for integration testing. |
