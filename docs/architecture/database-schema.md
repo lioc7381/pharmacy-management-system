@@ -1,148 +1,225 @@
 # Database Schema
 
-This section provides the definitive physical data model for the Pharmacy Management System. The following Data Definition Language (DDL) is specifically written for **SQLite**, adhering to the non-negotiable project constraint for a portable, file-based database. This schema transforms the conceptual data models defined earlier into a concrete, relational structure with enforced integrity constraints, serving as the foundational layer for the Laravel backend.
+This section provides the definitive physical data model for the Pharmacy Management System, defined using **Laravel's Schema Builder**. This approach abstracts the underlying SQL, leverages the framework's powerful migration system for database versioning, and generates the appropriate DDL for the project's required **SQLite** driver. This schema transforms the conceptual data models into a concrete, relational structure with enforced integrity constraints, serving as the foundational layer for the Laravel backend.
 
-```sql
---
--- Users Table
--- Stores all user accounts, for both clients and internal staff.
---
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL,
-    phone_number TEXT,
-    address TEXT,
-    role TEXT NOT NULL DEFAULT 'client' CHECK(role IN ('client', 'pharmacist', 'salesperson', 'delivery', 'manager')),
-    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'disabled')),
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+**Note:** The following code snippets are presented sequentially for readability. In a standard Laravel project, each `Migration` class resides in its own timestamped file within the `database/migrations` directory (e.g., `2024_01_01_000001_create_users_table.php`).
 
---
--- Medications Table
--- The master catalog for all medications available in the pharmacy.
---
-CREATE TABLE medications (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    strength_form TEXT NOT NULL,
-    description TEXT NOT NULL,
-    price REAL NOT NULL,
-    current_quantity INTEGER NOT NULL DEFAULT 0,
-    minimum_threshold INTEGER NOT NULL DEFAULT 10,
-    category TEXT NOT NULL CHECK(category IN ('Pain Relief', 'Antibiotics', 'Vitamins', 'Cold & Flu', 'Skincare')),
-    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'disabled')),
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+```php
+<?php
 
---
--- Prescriptions Table
--- Tracks client-submitted prescription images and their processing status.
---
-CREATE TABLE prescriptions (
-    id INTEGER PRIMARY KEY,
-    client_id INTEGER NOT NULL,
-    image_path TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'processed', 'rejected')),
-    processed_by INTEGER,
-    rejection_reason TEXT,
-    reference_number TEXT NOT NULL UNIQUE,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE RESTRICT,
-    FOREIGN KEY (processed_by) REFERENCES users(id) ON DELETE SET NULL
-);
+// database/migrations/2024_01_01_000001_create_users_table.php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
---
--- Orders Table
--- Represents a customer's order, created from a processed prescription.
---
-CREATE TABLE orders (
-    id INTEGER PRIMARY KEY,
-    client_id INTEGER NOT NULL,
-    prescription_id INTEGER UNIQUE,
-    total_amount REAL NOT NULL,
-    status TEXT NOT NULL DEFAULT 'in_preparation' CHECK(status IN ('in_preparation', 'ready_for_delivery', 'completed', 'cancelled', 'failed_delivery')),
-    assigned_delivery_user_id INTEGER,
-    cancellation_reason TEXT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE RESTRICT,
-    FOREIGN KEY (prescription_id) REFERENCES prescriptions(id) ON DELETE RESTRICT,
-    FOREIGN KEY (assigned_delivery_user_id) REFERENCES users(id) ON DELETE SET NULL
-);
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->string('password');
+            $table->string('phone_number')->nullable();
+            $table->text('address')->nullable();
+            $table->enum('role', ['client', 'pharmacist', 'salesperson', 'delivery', 'manager'])
+                  ->default('client');
+            $table->enum('status', ['active', 'disabled'])->default('active');
+            $table->timestamps();
+            
+            $table->index('email');
+        });
+    }
 
---
--- Order Items Table
--- A pivot table linking medications to orders, storing quantity and price at time of sale.
---
-CREATE TABLE order_items (
-    id INTEGER PRIMARY KEY,
-    order_id INTEGER NOT NULL,
-    medication_id INTEGER NOT NULL,
-    quantity INTEGER NOT NULL,
-    unit_price REAL NOT NULL,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(order_id, medication_id),
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (medication_id) REFERENCES medications(id) ON DELETE RESTRICT
-);
+    public function down(): void
+    {
+        Schema::dropIfExists('users');
+    }
+};
 
---
--- Advice Requests Table
--- Stores client questions and pharmacist responses.
---
-CREATE TABLE advice_requests (
-    id INTEGER PRIMARY KEY,
-    client_id INTEGER NOT NULL,
-    question TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'responded', 'rejected')),
-    response TEXT,
-    responder_id INTEGER,
-    rejection_reason TEXT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (responder_id) REFERENCES users(id) ON DELETE SET NULL
-);
+// database/migrations/2024_01_01_000002_create_medications_table.php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
---
--- Notifications Table
--- The backbone of the in-app asynchronous communication system.
---
-CREATE TABLE notifications (
-    id INTEGER PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    title TEXT NOT NULL,
-    message TEXT NOT NULL,
-    type TEXT NOT NULL CHECK(type IN ('order_status', 'prescription_update', 'advice_response', 'system_alert')),
-    read_at TEXT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('medications', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('strength_form');
+            $table->text('description');
+            $table->decimal('price', 8, 2);
+            $table->integer('current_quantity')->default(0);
+            $table->integer('minimum_threshold')->default(10);
+            $table->enum('category', ['Pain Relief', 'Antibiotics', 'Vitamins', 'Cold & Flu', 'Skincare']);
+            $table->enum('status', ['active', 'disabled'])->default('active');
+            $table->timestamps();
+            $table->index('name');
+            $table->index(['category', 'status']); // For filtered searches
+            $table->index('current_quantity'); // For stock checks
+        });
+    }
 
---
--- Indexes for Performance
---
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_medications_name ON medications(name);
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+    public function down(): void
+    {
+        Schema::dropIfExists('medications');
+    }
+};
+
+// database/migrations/2024_01_01_000003_create_prescriptions_table.php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('prescriptions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('client_id')->constrained('users')->restrictOnDelete();
+            $table->string('image_path');
+            $table->enum('status', ['pending', 'processed', 'rejected'])->default('pending');
+            $table->foreignId('processed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('rejection_reason')->nullable();
+            $table->string('reference_number')->unique();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('prescriptions');
+    }
+};
+
+// database/migrations/2024_01_01_000004_create_orders_table.php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('orders', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('client_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('prescription_id')->nullable()->unique()->constrained('prescriptions')->restrictOnDelete();
+            $table->decimal('total_amount', 10, 2);
+            $table->enum('status', ['in_preparation', 'ready_for_delivery', 'completed', 'cancelled', 'failed_delivery'])
+                  ->default('in_preparation');
+            $table->foreignId('assigned_delivery_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('cancellation_reason')->nullable();
+            $table->timestamps();
+            $table->index('status');
+            $table->index(['client_id', 'status']); // For user order history
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('orders');
+    }
+};
+
+// database/migrations/2024_01_01_000005_create_order_items_table.php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('order_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
+            $table->foreignId('medication_id')->constrained('medications')->restrictOnDelete();
+            $table->integer('quantity');
+            $table->decimal('unit_price', 8, 2);
+            $table->timestamp('created_at')->useCurrent();
+            
+            $table->unique(['order_id', 'medication_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('order_items');
+    }
+};
+
+// database/migrations/2024_01_01_000006_create_advice_requests_table.php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('advice_requests', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('client_id')->constrained('users')->cascadeOnDelete();
+            $table->text('question');
+            $table->enum('status', ['pending', 'responded', 'rejected'])->default('pending');
+            $table->text('response')->nullable();
+            $table->foreignId('responder_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('rejection_reason')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('advice_requests');
+    }
+};
+
+// database/migrations/2024_01_01_000007_create_notifications_table.php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('notifications', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->string('title');
+            $table->text('message');
+            $table->enum('type', ['order_status', 'prescription_update', 'advice_response', 'system_alert']);
+            $table->timestamp('read_at')->nullable();
+            $table->timestamp('created_at')->useCurrent();
+            
+            $table->index('user_id');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('notifications');
+    }
+};
 ```
 
 ## Design Rationale
 
-This schema is designed for robustness and data integrity, even within the constraints of SQLite. Key decisions include:
+This schema is designed for robustness and data integrity, defined via Laravel Migrations to ensure portability while targeting the project's SQLite database. Key decisions include:
 
-*   **Data Integrity:** Foreign key constraints are used extensively to maintain relational integrity. The `ON DELETE` clauses are chosen carefully:
-    *   `RESTRICT`: Prevents the deletion of a user or medication if they are linked to essential records like orders, ensuring historical data is not accidentally orphaned.
-    *   `CASCADE`: Used on `notifications` and `advice_requests` so that deleting a user automatically cleans up their associated, non-critical data.
-    *   `SET NULL`: Used for optional relationships, like `processed_by` or `assigned_delivery_user_id`, so that deleting a staff member nullifies their assignments without deleting the core order/prescription record.
-*   **ENUM Emulation:** SQLite does not have a native `ENUM` type. We enforce valid values for fields like `role` and `status` using `CHECK` constraints, which provides the same level of data validation at the database layer.
-*   **Performance:** While this is a small-scale project, basic indexes are created on columns that will be frequently used in `WHERE` clauses (e.g., `users.email` for login, `medications.name` for search). This is a proactive measure to ensure core operations remain performant.
+*   **Data Integrity:** Foreign key constraints are used extensively to maintain relational integrity. The `onDelete()` clauses are chosen carefully:
+    *   `restrictOnDelete()`: Prevents the deletion of a user or medication if they are linked to essential records like orders, ensuring historical data is not accidentally orphaned.
+    *   `cascadeOnDelete()`: Used on `notifications` and `advice_requests` so that deleting a user automatically cleans up their associated, non-critical data.
+    *   `nullOnDelete()`: Used for optional relationships, like `processed_by` or `assigned_delivery_user_id`, so that deleting a staff member nullifies their assignments without deleting the core order/prescription record.
+*   **Type Safety with ENUMs:** Laravel's Schema Builder provides a native `enum()` column type. We use this to enforce a specific set of allowed values for fields like `role` and `status`, providing robust data validation directly at the database layer. This is a more expressive and framework-integrated approach than using raw SQL `CHECK` constraints.
+*   **Performance:** While this is a small-scale project, basic indexes are created on columns that will be frequently used in `WHERE` clauses (e.g., `users.email` for login, `medications.name` for search) using the `$table->index()` method. This is a proactive measure to ensure core operations remain performant.
 *   **Transactional Support:** The schema is explicitly designed to support atomic business transactions. As validated in our query pattern analysis, the structure allows for a safe "check-and-decrement" pattern on medication stock within a single transaction, which is critical for preventing race conditions and ensuring the reliability of the inventory system.
 
 ---

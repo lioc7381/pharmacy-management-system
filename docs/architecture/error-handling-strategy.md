@@ -30,19 +30,29 @@ sequenceDiagram
 
 ## API Error Response Format
 
-**Architectural Rule:** All API error responses (status codes `4xx` and `5xx`) **must** conform to the following JSON structure. This provides a predictable contract that the frontend can rely on to parse errors and display appropriate feedback.
+**Architectural Rule:** All API error responses (status codes `4xx` and `5xx`) **must** conform to a consistent JSON structure. This provides a predictable contract that the Flutter frontend can rely on to parse errors and display appropriate feedback.
 
-```typescript
-// This TypeScript interface defines the mandatory error response contract.
-interface ApiError {
-  // A clear, human-readable summary of the error.
-  message: string;
+The structure consists of a mandatory `message` field and an optional `errors` object for detailed validation failures.
 
-  // An optional object containing detailed validation errors for each field.
-  // This is primarily used for 422 Unprocessable Entity responses.
-  errors?: {
-    [field: string]: string[];
-  };
+**Example: General Error (e.g., 403 Forbidden, 409 Conflict)**
+```json
+{
+  "message": "This action is unauthorized."
+}
+```
+
+**Example: Validation Error (422 Unprocessable Entity)**
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "email": [
+      "The email field is required."
+    ],
+    "password": [
+      "The password must be at least 8 characters."
+    ]
+  }
 }
 ```
 
