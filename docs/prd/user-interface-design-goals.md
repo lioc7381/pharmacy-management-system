@@ -1,5 +1,7 @@
 # User Interface Design Goals
 
+<!--docs/prd/[title].md-->
+
 ## Overall UX Vision
 
 The user experience must be modern, intuitive, and efficient, directly contrasting the high-friction manual processes it replaces. The design should inspire confidence and trust, ensuring that both customers and staff perceive the application as a reliable and streamlined tool. Key principles are clarity, simplicity, and speed, minimizing the number of steps required to complete core tasks like submitting a prescription or processing an order.

@@ -1,5 +1,7 @@
 # Introduction
 
+<!--docs/front-end-spec/[title].md-->
+
 This document defines the user experience goals, information architecture, user flows, and visual design specifications for the Pharmacy Management System's user interface. It serves as the foundation for visual design and frontend development, ensuring a cohesive and user-centered experience.
 
 ## Overall UX Goals & Principles

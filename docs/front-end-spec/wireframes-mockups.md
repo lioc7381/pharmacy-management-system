@@ -1,5 +1,7 @@
 # Wireframes & Mockups
 
+<!--docs/front-end-spec/[title].md-->
+
 This section provides a bridge between the abstract user flows and the final visual design. It outlines the source of truth for high-fidelity designs and specifies the layout and key components for the application's most critical screens.
 
 **Source of Truth:** This document is the single source of truth for all UI/UX specifications. The screen layouts described below are the final designs and definitive blueprints for development. They define the required elements, their arrangement, and their behavior, and must be implemented directly from these specifications.

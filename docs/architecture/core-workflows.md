@@ -1,5 +1,7 @@
 # Core Workflows
 
+<!--docs/architecture/[title].md-->
+
 This section illustrates the most critical end-to-end user journeys in the system using sequence diagrams. These diagrams provide a dynamic view of how different components—from the frontend application to the backend services and database—collaborate to achieve a user's goal. They are essential for clarifying complex interactions, validating the component architecture, and highlighting the asynchronous nature of the system's communication patterns.
 
 ## Prescription Submission and Initial Processing Workflow

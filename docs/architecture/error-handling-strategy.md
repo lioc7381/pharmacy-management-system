@@ -1,5 +1,7 @@
 # Error Handling Strategy
 
+<!--docs/architecture/[title].md-->
+
 This section defines the unified, end-to-end strategy for managing and communicating errors across the fullstack application. The primary goal is to create a system that is robust, predictable, and provides clear, actionable feedback. A consistent error handling contract between the Laravel backend and the Flutter frontend is critical for building a reliable application and a streamlined developer experience.
 
 ## Error Flow

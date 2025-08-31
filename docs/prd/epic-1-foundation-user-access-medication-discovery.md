@@ -1,5 +1,7 @@
 # Epic 1: Foundation, User Access & Medication Discovery
 
+<!--docs/prd/[title].md-->
+
 **Epic Goal:** To establish the complete project foundation, including the monorepo structure, core application setup for both Flutter and Laravel, and a basic CI workflow. This epic will deliver the complete, end-to-end user authentication system (registration, login, role-based access control) and the first piece of tangible user value: the public-facing medication search functionality.
 
 ## Story 1.1: Project Scaffolding & Core Setup

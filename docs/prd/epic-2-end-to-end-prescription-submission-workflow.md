@@ -1,5 +1,7 @@
 # Epic 2: End-to-End Prescription Submission Workflow
 
+<!--docs/prd/[title].md-->
+
 **Epic Goal:** To deliver the primary customer value proposition by building the complete, end-to-end workflow for a client to submit a prescription. This epic includes the creation of the foundational notification system, the secure API for file uploads, and the client-facing UI for both submitting a prescription and viewing subsequent status updates.
 
 ## Story 2.1: Implement Foundational Notification System (Backend)

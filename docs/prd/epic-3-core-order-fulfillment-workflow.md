@@ -1,5 +1,7 @@
 # Epic 3: Core Order Fulfillment Workflow
 
+<!--docs/prd/[title].md-->
+
 **Epic Goal:** To build the essential internal workflow for pharmacy staff, enabling them to efficiently process submitted prescriptions, create corresponding orders with robust, transactional stock management, and manage the order's status through to the point of delivery handoff. This epic delivers the core operational value proposition of the system.
 
 ## Story 3.1: Implement Staff Prescription Queue

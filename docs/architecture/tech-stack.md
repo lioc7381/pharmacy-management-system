@@ -1,5 +1,7 @@
 # Tech Stack
 
+<!--docs/architecture/[title].md-->
+
 This section serves as the **definitive and single source of truth** for all technologies, frameworks, and libraries to be used in the Pharmacy Management System. All development, tooling, and setup must adhere to these specific choices and versions. This precision is critical to ensure a stable, reproducible development environment, which is a core requirement for this educational project. Each selection is directly derived from the explicit constraints and preferences outlined in the provided PRD and technical requirements documents.
 
 ## Technology Stack Table

@@ -1,5 +1,7 @@
 # Animation & Micro-interactions
 
+<!--docs/front-end-spec/[title].md-->
+
 In this application, animation is not for decoration; it is a functional tool used to enhance clarity, provide feedback, and build user confidence. Our approach is to use motion to make the interface feel more responsive and intuitive, directly supporting our design principles of "Efficiency is the Feature" and "Provide Constant Reassurance." All animations will be subtle, quick, and purposeful to avoid distracting from the user's primary task.
 
 ## Motion Principles

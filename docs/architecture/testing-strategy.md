@@ -1,5 +1,7 @@
 # Testing Strategy
 
+<!--docs/architecture/[title].md-->
+
 This section defines the comprehensive testing approach for the Pharmacy Management System. The strategy is designed to be pragmatic, focusing on verifying the correctness of critical business logic and ensuring the stability of core user journeys, which aligns with the project's scope as an educational capstone. The goal is not to achieve 100% code coverage but to build a robust safety net that validates the most important and highest-risk areas of the application.
 
 ## Testing Pyramid

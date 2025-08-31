@@ -1,5 +1,7 @@
 # Requirements
 
+<!--docs/prd/[title].md-->
+
 ## Functional
 
 *   **FR1:** The system shall allow any user (public or authenticated) to search for medications by name and view their details, including price and availability.

@@ -1,5 +1,7 @@
 # Checklist Results
 
+<!--docs/front-end-spec/[title].md-->
+
 This UI/UX Specification has been formally validated against the standard BMad UI/UX Design Checklist to ensure its completeness, clarity, and readiness for the subsequent phases of design and development. The purpose of this review is to certify that the document provides a comprehensive and actionable blueprint for the frontend team.
 
 ## Executive Summary

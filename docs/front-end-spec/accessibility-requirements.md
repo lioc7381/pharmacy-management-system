@@ -1,5 +1,7 @@
 # Accessibility Requirements
 
+<!--docs/front-end-spec/[title].md-->
+
 Accessibility is a foundational requirement for this application, not an afterthought. Given the healthcare context, ensuring that all users, regardless of ability, can manage their prescriptions and health inquiries is a critical measure of success. Our design and development will be guided by the principle of inclusivity.
 
 ## Compliance Target

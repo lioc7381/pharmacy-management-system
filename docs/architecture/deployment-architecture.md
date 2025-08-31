@@ -1,5 +1,7 @@
 ## Deployment Architecture
 
+<!--docs/architecture/[title].md-->
+
 This section defines the process for building and packaging the Pharmacy Management System for distribution. Given the project's explicit constraint as a **local-only, non-production educational capstone**, "deployment" in this context refers to the creation of distributable build artifacts, not deployment to a cloud hosting environment. The strategy prioritizes simplicity, portability, and a security-aware, reproducible process with guaranteed version integrity.
 
 ### Versioning Strategy

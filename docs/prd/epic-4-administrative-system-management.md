@@ -1,5 +1,7 @@
 # Epic 4: Administrative System Management
 
+<!--docs/prd/[title].md-->
+
 **Epic Goal:** To empower the 'Manager' role with the essential administrative tools to manage the system's foundational data, including the medication catalog, client accounts, and employee accounts. This epic ensures the system is maintainable and can be administered effectively post-launch.
 
 ## Story 4.1: Manage Medication Catalog

@@ -1,5 +1,7 @@
 # Responsiveness Strategy
 
+<!--docs/front-end-spec/[title].md-->
+
 While this application is designed exclusively for Android, the platform encompasses a wide variety of screen sizes, densities, and aspect ratios—from compact phones to large tablets. Our responsiveness strategy ensures a consistent, high-quality user experience across all supported devices by adapting the layout to make the best use of the available screen real estate. Our approach is **mobile-first**, meaning we design for the most constrained view first and then progressively enhance the layout for larger screens.
 
 ## Breakpoints

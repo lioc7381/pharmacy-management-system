@@ -1,5 +1,7 @@
 # Performance Considerations
 
+<!--docs/front-end-spec/[title].md-->
+
 Performance is a critical aspect of the user experience. A fast, responsive application feels reliable and professional, building user trust and encouraging adoption. Conversely, a slow or laggy interface undermines our goal of creating an experience that is superior to the manual alternative. This section defines our performance targets and the design strategies we will employ to meet them.
 
 ## Performance Goals

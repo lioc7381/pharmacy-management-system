@@ -1,5 +1,7 @@
 # Coding Standards
 
+<!--docs/architecture/[title].md-->
+
 This document defines project-specific architectural standards. For all other stylistic and formatting conventions, this project formally adopts the official style guides for its respective technologies:
 
 *   **For all Dart/Flutter code:** The [Effective Dart Style Guide](https://dart.dev/guides/language/effective-dart/style).

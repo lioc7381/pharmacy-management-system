@@ -1,5 +1,7 @@
 # Components
 
+<!--docs/architecture/[title].md-->
+
 This section breaks down the Pharmacy Management System into its major logical components, defining their responsibilities, boundaries, and interactions. This component-based view provides a clear roadmap for development, ensuring a clean separation of concerns that aligns with the feature-based organization specified in the project's technical requirements. Each component is designed to have a single, well-defined responsibility, which is crucial for maintainability and for enabling effective, focused implementation by AI developer agents.
 
 ## Component List

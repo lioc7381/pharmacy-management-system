@@ -1,5 +1,7 @@
 # Next Steps
 
+<!--docs/front-end-spec/[title].md-->
+
 With the completion of this UI/UX Specification, we have a comprehensive blueprint for the application's design and user experience. This document serves as the single source of truth for all frontend design and development decisions. The following steps outline the immediate actions required to transition from specification to implementation.
 
 ## Immediate Actions

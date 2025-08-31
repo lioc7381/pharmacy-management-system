@@ -1,5 +1,7 @@
 # Unified Project Structure
 
+<!--docs/architecture/[title].md-->
+
 This section defines the physical layout of the monorepo. This structure is the concrete implementation of the architectural principles discussed earlier, providing a clean, feature-based organization that accommodates both the Flutter frontend and the Laravel backend within a single, manageable codebase. The layout is intentionally kept simple to align with the project's single-developer constraint, avoiding complex tooling in favor of a clear and logical folder convention.
 
 ```plaintext

@@ -1,5 +1,7 @@
 # Goals and Background Context
 
+<!--docs/prd/[title].md-->
+
 ## Goals
 
 *   Provide customers with a convenient, transparent, and reliable digital channel to manage their prescriptions and health inquiries.

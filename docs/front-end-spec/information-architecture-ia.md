@@ -1,5 +1,7 @@
 # Information Architecture (IA)
 
+<!--docs/front-end-spec/[title].md-->
+
 The information architecture is designed to provide a clear, logical, and role-specific structure for the application. It separates the user experience into two primary contexts: the public-facing (unauthenticated) area and the secure, role-based (authenticated) areas for clients and staff.
 
 ## Site Map / Screen Inventory

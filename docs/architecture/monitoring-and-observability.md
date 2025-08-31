@@ -1,5 +1,7 @@
 # Monitoring and Observability
 
+<!--docs/architecture/[title].md-->
+
 This section defines the strategy for monitoring the application's health and observing its behavior. Given the project's explicit constraint as a **local-only, non-production educational capstone**, this strategy is focused exclusively on providing developers with the tools and metrics needed for effective **local development, debugging, and performance tuning**. It does not include provisions for production-grade, automated monitoring or alerting systems.
 
 ## Monitoring Stack

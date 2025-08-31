@@ -1,5 +1,7 @@
 # User Flows
 
+<!--docs/front-end-spec/[title].md-->
+
 This section details the step-by-step pathways for the most critical user tasks within the application. Each flow is designed to be as intuitive and efficient as possible, considering the user's goal, potential edge cases, and necessary system feedback. These flows serve as a blueprint for the interaction design of each key feature.
 
 ## User Flow: Prescription Submission (Client)

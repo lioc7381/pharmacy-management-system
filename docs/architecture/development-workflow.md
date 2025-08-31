@@ -1,5 +1,7 @@
 ## Development Workflow
 
+<!--docs/architecture/[title].md-->
+
 ### Local Development Setup
 
 This section provides a step-by-step guide for setting up the local development environment. These instructions are designed to be followed sequentially to ensure a developer can go from a fresh repository clone to a fully running application with minimal friction.

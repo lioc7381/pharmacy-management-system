@@ -1,5 +1,7 @@
 # Technical Assumptions
 
+<!--docs/prd/[title].md-->
+
 This section documents the key technical decisions and constraints that will guide the Architect. These choices are derived directly from the project's foundational documents and are considered binding for the MVP.
 
 ## Repository Structure: Monorepo

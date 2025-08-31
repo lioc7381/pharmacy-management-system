@@ -1,5 +1,7 @@
 # Component Library / Design System
 
+<!--docs/front-end-spec/[title].md-->
+
 This section defines the approach to our component library and details the foundational, reusable UI components that will ensure consistency, speed up development, and create a cohesive user experience across the entire application.
 
 ### Design System Approach

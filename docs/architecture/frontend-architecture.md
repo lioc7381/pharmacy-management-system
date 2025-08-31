@@ -1,5 +1,7 @@
 # Frontend Architecture
 
+<!--docs/architecture/[title].md-->
+
 This section defines the specific architectural patterns, structure, and standards for the Flutter mobile application. The primary goal is to create a codebase that is clean, scalable, testable, and easy for developers (or AI agents) to navigate. The architecture is built upon the decisions made in the **Tech Stack** section (Flutter with Provider for state management) and is designed to directly implement the user flows and components detailed in the **UI/UX Specification**.
 
 ## Component Architecture

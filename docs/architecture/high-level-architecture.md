@@ -1,5 +1,7 @@
 # High Level Architecture
 
+<!--docs/architecture/[title].md-->
+
 This section establishes the foundational architectural principles for the Pharmacy Management System. It defines the overall structure, key components, and guiding patterns that will inform all subsequent design and development decisions. The choices made here are derived directly from the project's explicit constraints as an educational capstone, prioritizing simplicity, portability, and learnability.
 
 ## Technical Summary

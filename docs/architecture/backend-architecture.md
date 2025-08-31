@@ -1,5 +1,7 @@
 # Backend Architecture
 
+<!--docs/architecture/[title].md-->
+
 This section defines the architectural patterns, structure, and standards for the Laravel backend API. The design prioritizes simplicity, maintainability, and testability, directly aligning with the project's constraints as an educational capstone. As a monolithic service, its primary responsibility is to serve the Flutter frontend by providing a secure and efficient RESTful interface to the application's data and business logic.
 
 ## Service Architecture

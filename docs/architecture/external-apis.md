@@ -1,5 +1,7 @@
 # External APIs
 
+<!--docs/architecture/[title].md-->
+
 Based on a thorough review of the PRD and technical requirements, the Minimum Viable Product (MVP) for the Pharmacy Management System **does not require any external API integrations**.
 
 This architectural decision is a direct consequence of the project's core constraints:

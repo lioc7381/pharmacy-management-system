@@ -1,5 +1,7 @@
 # Security and Performance
 
+<!--docs/architecture/[title].md-->
+
 This section defines the critical, cross-cutting requirements for security and performance. These principles are mandatory and must be integrated into the development of every feature. The goal is to build an application that is not only functional but also secure by design and provides a responsive, high-quality user experience.
 
 ## Security Requirements

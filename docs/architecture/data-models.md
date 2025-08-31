@@ -1,5 +1,7 @@
 # Data Models
 
+<!--docs/architecture/[title].md-->
+
 This section defines the core data entities that form the backbone of the Pharmacy Management System. These models are a direct translation of the schema specified in the database schema and serve as the conceptual blueprint for the SQLite database, Laravel Eloquent models, and the corresponding Dart classes for the Flutter frontend. The creation of corresponding Dart models is a key architectural decision to enforce type safety across the stack and ensure seamless data serialization between the Laravel API and Flutter client.
 
 ## User

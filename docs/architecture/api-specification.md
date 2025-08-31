@@ -1,5 +1,7 @@
 # API Specification
 
+<!--docs/architecture/[title].md-->
+
 This section defines the formal contract for the REST API that the Flutter client will use to communicate with the Laravel backend. Adhering to this specification is mandatory for both frontend and backend development to ensure seamless integration. The API is designed to be resource-oriented, following standard RESTful principles.
 
 As per the project requirements, we will use the **OpenAPI 3.0** standard to document the API. This provides a clear, language-agnostic contract that can be used to generate client libraries, documentation, and validation rules.

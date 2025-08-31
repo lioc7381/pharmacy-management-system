@@ -1,5 +1,7 @@
 # Out of Scope for MVP
 
+<!--docs/prd/[title].md-->
+
 To ensure a focused and timely delivery of the core value proposition, the following features and capabilities are explicitly excluded from the MVP scope. They will be considered for future development phases based on user feedback and business priorities.
 
 *   **Pharmacist Advice System:** The entire workflow for clients submitting questions and pharmacists responding will not be included.

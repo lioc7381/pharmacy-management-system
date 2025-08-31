@@ -1,5 +1,7 @@
 # Checklist Results Report
 
+<!--docs/prd/[title].md-->
+
 This section documents the results of a formal validation of this PRD against the BMad Product Manager (PM) Requirements Checklist (`.bmad-core/checklists/pm-checklist.md`). The purpose of this review is to ensure the document is complete, clear, well-structured, and ready for the next phase of the development lifecycle: architectural design.
 
 ## Executive Summary

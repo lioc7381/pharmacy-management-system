@@ -1,5 +1,7 @@
 # Database Schema
 
+<!--docs/architecture/[title].md-->
+
 This section provides the definitive physical data model for the Pharmacy Management System, defined using **Laravel's Schema Builder**. This approach abstracts the underlying SQL, leverages the framework's powerful migration system for database versioning, and generates the appropriate DDL for the project's required **SQLite** driver. This schema transforms the conceptual data models into a concrete, relational structure with enforced integrity constraints, serving as the foundational layer for the Laravel backend.
 
 **Note:** The following code snippets are presented sequentially for readability. In a standard Laravel project, each `Migration` class resides in its own timestamped file within the `database/migrations` directory (e.g., `2024_01_01_000001_create_users_table.php`).

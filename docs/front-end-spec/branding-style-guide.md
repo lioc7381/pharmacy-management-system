@@ -1,5 +1,7 @@
 # Branding & Style Guide
 
+<!--docs/front-end-spec/[title].md-->
+
 This section defines the core visual identity of the Pharmacy Management System. Adherence to this guide will ensure a consistent, accessible, and professional user interface that builds user trust and reinforces the brand. As per the project requirements, the foundation of our visual style is a **dark Material theme**.
 
 ## Visual Identity

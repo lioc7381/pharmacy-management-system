@@ -1,5 +1,7 @@
 # Next Steps
 
+<!--docs/prd/[title].md-->
+
 This Product Requirements Document (PRD) is now considered complete and has been formally validated. It serves as the single source of truth for the project's scope, requirements, and user-centric goals. The following prompts are designed to provide a clear and actionable handoff to the next key roles in the development lifecycle: the UX Expert (or Design Architect) and the Architect.
 
 ## UX Expert Prompt
