@@ -1,0 +1,22 @@
+schema: 1
+story: "1.1.3"
+story_title: "Implement Health Check Vertical Slice"
+gate: "PASS" # PASS|CONCERNS|FAIL|WAIVED
+status_reason: "All acceptance criteria are met, and the previous navigation issue has been resolved. The implementation is a solid, low-risk vertical slice."
+reviewer: "Quinn (Test Architect)"
+updated: "2024-10-27T14:30:00Z"
+
+# No issues found that would warrant a CONCERNS or FAIL status.
+top_issues: []
+
+# Waiver is not active for a PASS gate.
+waiver: { active: false }
+
+# Optional extended fields for context.
+quality_score: 100
+evidence:
+  tests_reviewed: 1 # backend/tests/Feature/HealthCheckTest.php
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
