@@ -5,10 +5,18 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
+/**
+ * Seeder for creating sample users with different roles.
+ *
+ * This seeder creates one user for each role defined in the system:
+ * client, pharmacist, salesperson, delivery, and manager.
+ */
 class UserSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     *
+     * @return void
      */
     public function run(): void
     {
