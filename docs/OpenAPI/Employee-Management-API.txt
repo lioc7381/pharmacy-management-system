@@ -1,0 +1,273 @@
+openapi: 3.0.0
+info:
+  title: Employee Management API
+  version: 1.0.0
+  description: >
+    A dedicated API for managers to create, retrieve, update, and disable
+    employee accounts within the Pharmacy Management System. Access to these
+    endpoints is restricted to users with the 'Manager' role.
+
+    Authentication is handled via bearer tokens issued by Laravel Sanctum.
+servers:
+  - url: 'http://localhost:8000/api'
+    description: Local Development Server
+tags:
+  - name: User Management
+    description: Operations related to managing employee user accounts.
+paths:
+  /employees:
+    get:
+      summary: Get a list of employees
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to retrieve and search for employee accounts.
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search employees by name or email.
+      responses:
+        '200':
+          description: A list of employee accounts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a manager.
+    post:
+      summary: Add a new employee
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: >-
+        Manager-only endpoint to create a new staff account with a specific
+        role. This is the only way to create non-client users.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewEmployeeRequest'
+      responses:
+        '201':
+          description: Employee account created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '422':
+          description: 'Validation error (e.g., email in use, invalid role).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/employees/{id}':
+    get:
+      summary: Get a single employee
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to retrieve a single employee's details.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the employee to retrieve.
+      responses:
+        '200':
+          description: The employee's user object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Employee not found.
+    put:
+      summary: Update an employee account
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: >-
+        Manager-only endpoint to update an employee's details, including their
+        role.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the employee to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmployeeRequest'
+      responses:
+        '200':
+          description: Employee updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Employee not found.
+        '422':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Disable an employee account
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to soft-delete an employee account.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the employee to disable.
+      responses:
+        '204':
+          description: Employee account disabled successfully.
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Employee not found.
+        '409':
+          description: Conflict. Cannot disable an employee with active assignments.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    User:
+      type: object
+      description: Represents a user account in the system.
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        role:
+          type: string
+          example: manager
+        status:
+          type: string
+          example: active
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    NewEmployeeRequest:
+      type: object
+      description: Schema for creating a new employee account.
+      required:
+        - name
+        - email
+        - password
+        - role
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        role:
+          type: string
+          enum:
+            - pharmacist
+            - salesperson
+            - delivery
+            - manager
+    UpdateEmployeeRequest:
+      type: object
+      description: Schema for updating an existing employee's details.
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+            - pharmacist
+            - salesperson
+            - delivery
+            - manager
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          description: Contains a list of validation errors for each field.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email:
+              - The email has already been taken.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >-
+        Authentication token issued upon successful login. Provide the token in
+        the Authorization header as `Bearer <token>`.

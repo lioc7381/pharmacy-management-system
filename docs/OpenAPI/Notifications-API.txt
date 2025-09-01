@@ -1,0 +1,132 @@
+openapi: 3.0.0
+info:
+  title: Notifications API
+  version: 1.0.0
+  description: >
+    This API provides endpoints for users to retrieve and manage their
+    notifications. Authentication is handled via bearer tokens issued by Laravel
+    Sanctum.
+servers:
+  - url: 'http://localhost:8000/api'
+    description: Local Development Server
+paths:
+  /notifications:
+    get:
+      summary: Get my notifications
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      description: >-
+        Retrieves a list of all notifications for the authenticated user, with
+        the newest first.
+      responses:
+        '200':
+          description: A list of notifications.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthenticated.
+  /notifications/mark-all-as-read:
+    put:
+      summary: Mark all notifications as read
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      description: Marks all unread notifications for the authenticated user as read.
+      responses:
+        '204':
+          description: All notifications marked as read successfully. No content returned.
+        '401':
+          description: Unauthenticated.
+  '/notifications/{id}/read':
+    put:
+      summary: Mark a single notification as read
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      description: Marks a specific notification as read for the authenticated user.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the notification to mark as read.
+      responses:
+        '200':
+          description: >-
+            Notification marked as read successfully. Returns the updated
+            notification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. The user does not own this notification.
+        '404':
+          description: Notification not found.
+components:
+  schemas:
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Order Status Update
+        message:
+          type: string
+          example: 'Your order #987 is now ready for delivery.'
+        type:
+          type: string
+          enum:
+            - order_status
+            - prescription_update
+            - advice_response
+            - system_alert
+          example: order_status
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        created_at:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          description: Contains a list of validation errors for each field.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email:
+              - The email has already been taken.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

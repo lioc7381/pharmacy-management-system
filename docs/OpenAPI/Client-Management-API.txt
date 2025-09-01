@@ -1,0 +1,201 @@
+openapi: 3.0.0
+info:
+  title: Pharmacy Management System - Client Management API
+  version: 1.0.0
+  description: >
+    This API provides manager-only endpoints for administering client accounts
+    within the Pharmacy Management System. It allows for searching, retrieving,
+    updating, and disabling client profiles.
+
+    Authentication is handled via bearer tokens issued by Laravel Sanctum.
+servers:
+  - url: 'http://localhost:8000/api'
+    description: Local Development Server
+paths:
+  /clients:
+    get:
+      summary: Get a list of clients
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to retrieve and search for client accounts.
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search clients by name or email.
+      responses:
+        '200':
+          description: A list of client accounts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a manager.
+  '/clients/{id}':
+    get:
+      summary: Get a single client
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to retrieve a single client's details.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The client's user object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Client not found.
+    put:
+      summary: Update a client account
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to update a client's account details.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClientRequest'
+      responses:
+        '200':
+          description: Client updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Client not found.
+        '422':
+          description: 'Validation error (e.g., email already in use).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Disable a client account
+      tags:
+        - User Management
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to soft-delete a client account.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Client account disabled successfully.
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Client not found.
+        '409':
+          description: Conflict. Cannot disable a client with active orders.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        role:
+          type: string
+          example: client
+        status:
+          type: string
+          example: active
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    UpdateClientRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone_number:
+          type: string
+        address:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          description: Contains a list of validation errors for each field.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email:
+              - The email has already been taken.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

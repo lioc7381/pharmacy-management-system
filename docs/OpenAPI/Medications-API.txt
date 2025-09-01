@@ -1,0 +1,314 @@
+openapi: 3.0.0
+info:
+  title: Medications API
+  version: 1.0.0
+  description: >
+    This API provides endpoints for managing the medication catalog. It allows
+    for searching, creating, updating, and disabling medications, as well as
+    generating a low-stock report. Access to modification endpoints is
+    restricted to users with the 'Manager' role.
+
+    Authentication is handled via bearer tokens issued by Laravel Sanctum.
+servers:
+  - url: 'http://localhost:8000/api'
+    description: Local Development Server
+paths:
+  /medications:
+    get:
+      summary: Search for medications
+      tags:
+        - Medications
+      description: Publicly accessible endpoint to search the medication catalog by name.
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: The name of the medication to search for.
+      responses:
+        '200':
+          description: >-
+            A list of matching medications. Returns an empty array if no results
+            are found.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Medication'
+    post:
+      summary: Add a new medication
+      tags:
+        - Medications
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to add a new medication to the catalog.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewMedication'
+      responses:
+        '201':
+          description: Medication created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Medication'
+        '401':
+          description: Unauthenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden. User does not have 'Manager' role.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 'Validation error (e.g., duplicate medication name, invalid price).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/medications/{id}':
+    put:
+      summary: Update a medication
+      tags:
+        - Medications
+      security:
+        - bearerAuth: []
+      description: Manager-only endpoint to update an existing medication's details.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the medication to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMedication'
+      responses:
+        '200':
+          description: Medication updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Medication'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Medication not found.
+        '422':
+          description: >-
+            Validation error, such as attempting to create a duplicate
+            medication (name + strength_form).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: The given data was invalid.
+                errors:
+                  name:
+                    - >-
+                      A medication with this name and strength/form already
+                      exists.
+    delete:
+      summary: Disable a medication
+      tags:
+        - Medications
+      security:
+        - bearerAuth: []
+      description: >-
+        Manager-only endpoint to perform a soft delete on a medication by
+        setting its status to 'disabled'.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the medication to disable.
+      responses:
+        '204':
+          description: Medication disabled successfully. No content returned.
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Medication not found.
+        '409':
+          description: >-
+            Conflict. Cannot disable a medication that is part of an active
+            order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Cannot disable a medication that is part of an active order.
+  /medications/low-stock:
+    get:
+      summary: Get low stock report
+      tags:
+        - Medications
+      security:
+        - bearerAuth: []
+      description: >-
+        Manager-only endpoint to retrieve a list of all medications where the
+        current quantity is at or below the minimum threshold.
+      responses:
+        '200':
+          description: A list of low-stock medications.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Medication'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+components:
+  schemas:
+    Medication:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 101
+        name:
+          type: string
+          example: Paracetamol
+        strength_form:
+          type: string
+          example: 500mg Tablet
+        description:
+          type: string
+          example: For relief of mild to moderate pain.
+        price:
+          type: number
+          format: float
+          example: 15.99
+        current_quantity:
+          type: integer
+          example: 250
+        minimum_threshold:
+          type: integer
+          example: 50
+        category:
+          type: string
+          enum:
+            - Pain Relief
+            - Antibiotics
+            - Vitamins
+            - Cold & Flu
+            - Skincare
+          example: Pain Relief
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+          example: active
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    NewMedication:
+      type: object
+      required:
+        - name
+        - strength_form
+        - description
+        - price
+        - current_quantity
+        - category
+      properties:
+        name:
+          type: string
+        strength_form:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+        current_quantity:
+          type: integer
+        minimum_threshold:
+          type: integer
+        category:
+          type: string
+          enum:
+            - Pain Relief
+            - Antibiotics
+            - Vitamins
+            - Cold & Flu
+            - Skincare
+    UpdateMedication:
+      type: object
+      properties:
+        name:
+          type: string
+        strength_form:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+        current_quantity:
+          type: integer
+        minimum_threshold:
+          type: integer
+        category:
+          type: string
+          enum:
+            - Pain Relief
+            - Antibiotics
+            - Vitamins
+            - Cold & Flu
+            - Skincare
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          description: Contains a list of validation errors for each field.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email:
+              - The email has already been taken.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

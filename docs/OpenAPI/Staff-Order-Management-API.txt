@@ -1,0 +1,402 @@
+openapi: 3.0.0
+info:
+  title: Order Management API (Staff)
+  version: 1.0.0
+  description: >
+    This API provides all endpoints for managing and viewing orders within the
+    Pharmacy Management System.
+
+
+    It includes staff-only endpoints for retrieving lists of orders, modifying
+    items, updating an order's status through its lifecycle, and assigning it to
+    a delivery person.
+
+
+    It also includes client-only endpoints for users to securely view their own
+    order history.
+
+    Authentication is handled via bearer tokens issued by Laravel Sanctum.
+servers:
+  - url: 'http://localhost:8000/api'
+    description: Local Development Server
+paths:
+  /orders:
+    get:
+      summary: Get a list of orders (Staff)
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Staff-only endpoint to retrieve a list of orders. Can be filtered by
+        status.
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - in_preparation
+              - ready_for_delivery
+              - completed
+              - cancelled
+              - failed_delivery
+          description: Filter orders by their current status.
+      responses:
+        '200':
+          description: A list of orders matching the filter.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not authorized staff.
+  '/orders/{id}':
+    get:
+      summary: Get a single order by ID (Staff)
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Staff-only endpoint to retrieve the full details of a single order,
+        including its line items.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the order to retrieve.
+      responses:
+        '200':
+          description: The detailed order object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Order not found.
+    put:
+      summary: Modify an order's items
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Salesperson-only endpoint to modify the items of an order that is in the
+        'in_preparation' state.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the order to modify.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderRequest'
+      responses:
+        '200':
+          description: Order updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: >-
+            Forbidden. User is not a salesperson or order is not in a modifiable
+            state.
+        '404':
+          description: Order not found.
+        '409':
+          description: 'Conflict (e.g., insufficient stock for an item).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/orders/{id}/status':
+    put:
+      summary: Update an order's status
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Staff-only endpoint to transition an order to a new status (e.g.,
+        prepare, complete, cancel).
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the order to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderStatusRequest'
+      responses:
+        '200':
+          description: Order status updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: >-
+            Forbidden. User role not permitted to perform this status
+            transition.
+        '404':
+          description: Order not found.
+        '409':
+          description: >-
+            Conflict. The requested status transition is not valid from the
+            order's current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/orders/{id}/assign':
+    post:
+      summary: Assign an order to a delivery person
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Salesperson-only endpoint to assign an order to a specific delivery
+        person.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the order to assign.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignOrderRequest'
+      responses:
+        '200':
+          description: Order assigned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a salesperson.
+        '404':
+          description: Order or Delivery User not found.
+        '422':
+          description: >-
+            Validation error (e.g., the provided user ID does not have the
+            'delivery' role or is disabled).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: The given data was invalid.
+                errors:
+                  delivery_user_id:
+                    - >-
+                      The selected user is disabled and cannot be assigned
+                      orders.
+  /my-orders:
+    get:
+      summary: Get my orders (Client)
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Client-only endpoint that returns a list of orders belonging to the
+        authenticated user.
+      responses:
+        '200':
+          description: A list of the user's orders.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+  '/my-orders/{id}':
+    get:
+      summary: Get a single one of my orders (Client)
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      description: >-
+        Client-only endpoint that returns a single order, if and only if it
+        belongs to the authenticated user.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the order to retrieve.
+      responses:
+        '200':
+          description: The detailed order object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. The user does not own this order.
+        '404':
+          description: Order not found.
+components:
+  schemas:
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 987
+        client_id:
+          type: integer
+          example: 1
+        prescription_id:
+          type: integer
+          nullable: true
+          example: 54321
+        total_amount:
+          type: number
+          format: float
+          example: 47.97
+        status:
+          type: string
+          enum:
+            - in_preparation
+            - ready_for_delivery
+            - completed
+            - cancelled
+            - failed_delivery
+          example: in_preparation
+        assigned_delivery_user_id:
+          type: integer
+          nullable: true
+          example: 25
+        cancellation_reason:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        order_id:
+          type: integer
+        medication_id:
+          type: integer
+        quantity:
+          type: integer
+        unit_price:
+          type: number
+          format: float
+    UpdateOrderRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - medication_id
+              - quantity
+            properties:
+              medication_id:
+                type: integer
+              quantity:
+                type: integer
+    UpdateOrderStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ready_for_delivery
+            - completed
+            - cancelled
+            - failed_delivery
+        cancellation_reason:
+          type: string
+          description: Required when status is 'cancelled'.
+    AssignOrderRequest:
+      type: object
+      required:
+        - delivery_user_id
+      properties:
+        delivery_user_id:
+          type: integer
+          description: The ID of the user with the 'delivery' role.
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          description: Contains a list of validation errors for each field.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email:
+              - The email has already been taken.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,168 @@
+openapi: 3.0.0
+info:
+  title: Authentication API
+  version: 1.0.0
+  description: >
+    Handles user registration, login, and logout for the Pharmacy Management
+    System. Authentication is handled via bearer tokens issued by Laravel
+    Sanctum.
+servers:
+  - url: 'http://localhost:8000/api'
+    description: Local Development Server
+paths:
+  /register:
+    post:
+      summary: Register a new client account
+      tags:
+        - Authentication
+      description: Creates a new user account with the 'client' role by default.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  example: John Doe
+                email:
+                  type: string
+                  format: email
+                  example: john.doe@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: password123
+      responses:
+        '201':
+          description: >-
+            Account created successfully. Returns the new user object and a
+            Sanctum token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                    example: 2|ghijklm789012
+        '422':
+          description: 'Validation error (e.g., email already exists, weak password).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /login:
+    post:
+      summary: Authenticate a user
+      tags:
+        - Authentication
+      description: >-
+        Validates user credentials and returns a plain-text Sanctum API token
+        for subsequent requests.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john.doe@example.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '200':
+          description: Login successful. The response body contains the API token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: 1|abcdef123456
+        '401':
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /logout:
+    post:
+      summary: Log out the current user
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      description: Revokes the user's current Sanctum API token on the server.
+      responses:
+        '204':
+          description: Logout successful. No content returned.
+        '401':
+          description: Unauthenticated.
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        role:
+          type: string
+          example: client
+        status:
+          type: string
+          example: active
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          description: Contains a list of validation errors for each field.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email:
+              - The email has already been taken.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,252 @@
+openapi: 3.0.0
+info:
+  title: Prescriptions API
+  version: 1.0.0
+  description: >
+    This API provides endpoints for managing the lifecycle of prescriptions, 
+    from client submission to staff processing. It is a component of the larger 
+    Pharmacy Management System API.
+
+    Authentication is handled via bearer tokens issued by Laravel Sanctum.
+servers:
+  - url: 'http://localhost:8000/api'
+    description: Local Development Server
+paths:
+  /prescriptions:
+    get:
+      summary: Get pending prescriptions
+      tags:
+        - Prescriptions
+      security:
+        - bearerAuth: []
+      description: >-
+        Staff-only endpoint to retrieve a list of prescriptions awaiting
+        processing.
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending
+            default: pending
+          description: Filter prescriptions by status.
+      responses:
+        '200':
+          description: A list of pending prescriptions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prescription'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not authorized staff.
+    post:
+      summary: Submit a new prescription
+      tags:
+        - Prescriptions
+      security:
+        - bearerAuth: []
+      description: Client-only endpoint to upload a prescription image for processing.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: 'The prescription image file (JPG, PNG, max 5MB).'
+      responses:
+        '201':
+          description: >-
+            Prescription submitted successfully. Returns the new prescription
+            object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a 'client'.
+        '422':
+          description: 'Validation error (e.g., invalid file type, file too large).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/prescriptions/{id}/process':
+    put:
+      summary: Process or reject a prescription
+      tags:
+        - Prescriptions
+      security:
+        - bearerAuth: []
+      description: >
+        Salesperson-only endpoint to perform an action on a pending
+        prescription.
+
+        - To **process**, provide a list of medication items. This creates a new
+        order.
+
+        - To **reject**, provide a status of 'rejected' and a reason.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the prescription to process.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/ProcessPrescriptionRequest'
+                - $ref: '#/components/schemas/RejectPrescriptionRequest'
+      responses:
+        '200':
+          description: Prescription rejected successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+        '201':
+          description: Prescription processed and order created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessPrescriptionResponse'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a 'salesperson'.
+        '404':
+          description: Prescription not found.
+        '409':
+          description: >-
+            Conflict (e.g., insufficient stock for an item, or prescription
+            already processed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 'Validation error (e.g., missing rejection reason).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    Prescription:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 54321
+        client_id:
+          type: integer
+          example: 1
+        image_path:
+          type: string
+          example: /storage/prescriptions/1/2024/05/abc123def456.jpg
+        status:
+          type: string
+          enum:
+            - pending
+            - processed
+            - rejected
+          example: pending
+        processed_by:
+          type: integer
+          nullable: true
+          example: 12
+        rejection_reason:
+          type: string
+          nullable: true
+        reference_number:
+          type: string
+          example: P1684321
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ProcessPrescriptionRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - medication_id
+              - quantity
+            properties:
+              medication_id:
+                type: integer
+                example: 101
+              quantity:
+                type: integer
+                example: 30
+    RejectPrescriptionRequest:
+      type: object
+      required:
+        - status
+        - rejection_reason
+      properties:
+        status:
+          type: string
+          enum:
+            - rejected
+        rejection_reason:
+          type: string
+          example: The image provided is blurry and unreadable.
+    ProcessPrescriptionResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Prescription processed and order created.
+        order_id:
+          type: integer
+          example: 987
+        order_status:
+          type: string
+          example: in_preparation
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          description: Contains a list of validation errors for each field.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email:
+              - The email has already been taken.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

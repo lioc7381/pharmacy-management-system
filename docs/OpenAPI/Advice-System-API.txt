@@ -1,0 +1,220 @@
+openapi: 3.0.0
+info:
+  title: Advice System API
+  version: 1.0.0
+  description: >
+    This API provides endpoints for clients to submit health-related questions
+    and for pharmacists to review and respond to them.
+
+    Authentication is handled via bearer tokens issued by Laravel Sanctum.
+servers:
+  - url: 'http://localhost:8000/api'
+    description: Local Development Server
+paths:
+  /advice-requests:
+    get:
+      summary: Get advice requests
+      tags:
+        - Advice System
+      security:
+        - bearerAuth: []
+      description: >-
+        Pharmacist-only endpoint to retrieve a list of advice requests,
+        typically filtered for pending ones.
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending
+              - responded
+              - rejected
+            default: pending
+          description: Filter requests by status.
+      responses:
+        '200':
+          description: A list of advice requests.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdviceRequest'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a pharmacist.
+    post:
+      summary: Submit an advice request
+      tags:
+        - Advice System
+      security:
+        - bearerAuth: []
+      description: >-
+        Client-only endpoint to submit a health-related question to a
+        pharmacist.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewAdviceRequest'
+      responses:
+        '201':
+          description: Request submitted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdviceRequest'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a client.
+        '422':
+          description: 'Validation error (e.g., question is empty).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/advice-requests/{id}':
+    put:
+      summary: Respond to or reject an advice request
+      tags:
+        - Advice System
+      security:
+        - bearerAuth: []
+      description: >-
+        Pharmacist-only endpoint to perform an action on a pending advice
+        request (either respond or reject).
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the advice request to action.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/RespondToAdviceRequest'
+                - $ref: '#/components/schemas/RejectAdviceRequest'
+      responses:
+        '200':
+          description: Action completed successfully. Returns the updated advice request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdviceRequest'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden. User is not a pharmacist.
+        '404':
+          description: Advice request not found.
+        '409':
+          description: >-
+            Conflict. The request has already been handled by another
+            pharmacist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 'Validation error (e.g., missing rejection reason).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    AdviceRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        client_id:
+          type: integer
+          example: 1
+        question:
+          type: string
+          example: Is it safe to take this medication with grapefruit juice?
+        status:
+          type: string
+          enum:
+            - pending
+            - responded
+            - rejected
+          example: pending
+        response:
+          type: string
+          nullable: true
+          example: >-
+            It is generally not recommended. Please consult the medication's
+            leaflet or call us for more details.
+        responder_id:
+          type: integer
+          nullable: true
+          example: 15
+        rejection_reason:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    NewAdviceRequest:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+    RespondToAdviceRequest:
+      type: object
+      required:
+        - response
+      properties:
+        response:
+          type: string
+    RejectAdviceRequest:
+      type: object
+      required:
+        - status
+        - rejection_reason
+      properties:
+        status:
+          type: string
+          enum:
+            - rejected
+        rejection_reason:
+          type: string
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          description: Contains a list of validation errors for each field.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email:
+              - The email has already been taken.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
