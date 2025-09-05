@@ -11,7 +11,8 @@ This section serves as the **definitive and single source of truth** for all tec
 | **Frontend Language** | Dart | ^3.9.0 | Primary language for Flutter development. | Required by the Flutter framework. |
 | **Frontend Framework**| Flutter | 3.35.x | UI toolkit for building the Android application. | A core, non-negotiable project requirement. |
 | **UI Component Lib** | Material Design 3 | (Built-in) | Provides the foundational UI components and styling. | Specified in the UI/UX spec for a modern, dark theme. |
-| **State Management** | Provider | ^6.1 | Manages application state on the frontend. | Explicitly required. The implementation will follow a simplified pattern, using global providers for cross-cutting concerns and feature-scoped providers for business logic, avoiding complex event systems. |
+| **UI Component Lib** | Cupertino Icons | ^1.0.8 | Provides a set of iOS-style icons. | Included by default in new Flutter projects to ensure access to standard iOS icons, complementing Material Design. |
+| **State Management** | Provider | ^6.1.5 | Manages application state on the frontend. | Explicitly required. The implementation will follow a simplified pattern, using global providers for cross-cutting concerns and feature-scoped providers for business logic, avoiding complex event systems. |
 | **Routing** | go_router | ^16.2.1 | Manages declarative, type-safe routing and navigation. | Chosen for its robust, centralized redirect function, which is invaluable for handling the app's 4 distinct user roles and protected routes. This eliminates scattered auth logic and reduces total code volume. |
 | **HTTP Client** | http | ^1.5.0 | For making REST API calls to the Laravel backend. | Chosen for its simplicity and minimal API surface, aligning with the project's goal of reducing dependencies. It replaces `dio` to eliminate the complexity of interceptors. |
 | **Local Storage** | shared_preferences | ^2.5.3 | To persist the authentication token on the device. | Mandated as the exclusive method for token storage to simplify the architecture. It replaces `flutter_secure_storage` to remove platform-specific complexity. |
@@ -23,8 +24,10 @@ This section serves as the **definitive and single source of truth** for all tec
 | **File Storage** | Local Filesystem | N/A | Stores uploaded prescription images on the server. | Simplest approach for a local-only, zero-budget project. |
 | **Authentication** | Laravel Sanctum | 4.x | Manages API token-based authentication. | Explicitly required in the technical specifications. |
 | **Frontend Testing** | flutter_test | (SDK) | For widget and unit testing the Flutter application. | Standard, built-in testing framework for Flutter. |
+| **Frontend Testing** | mockito | ^5.5.1 | A mock library for creating mock objects in tests. | Enables robust unit/widget testing by isolating components from their dependencies (e.g., mocking API clients), leading to focused and reliable tests. |
 | **Backend Testing** | PHPUnit | 11.x | For unit and feature testing the Laravel API. | Standard, built-in testing framework for Laravel. |
 | **E2E Testing** | integration_test | (SDK) | For full-stack, end-to-end user journey testing. | Flutter's official package for integration testing. |
+| **Development Tooling** | build_runner | ^2.8.0 | A build tool for generating Dart code files. | Required by `mockito`'s annotation-based mock generation. It automates the creation of boilerplate code, improving developer productivity. |
 | **Linting** | flutter_lints | ^6.0.0 | Provides static analysis to identify and report on potential code issues. | Enforces a consistent coding style and helps prevent common errors, improving code quality and maintainability. |
 | **CI/CD** | GitHub Actions | N/A | For automated testing on push (post-MVP). | Mentioned as a "Should-have" in the technical specs. |
 | **Logging** | dart:developer / Laravel Logging | (Built-in) | Provides structured logging for debugging. | Specified in the technical requirements. |

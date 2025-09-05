@@ -834,7 +834,6 @@ dev_dependencies:
     sdk: flutter
   mockito: ^5.4.0
   build_runner: ^2.3.3
-  http_mock_adapter: ^0.6.1
   shared_preferences_test: ^2.0.0
 ```
 
