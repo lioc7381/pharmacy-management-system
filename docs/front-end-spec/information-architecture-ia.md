@@ -2,7 +2,9 @@
 
 <!--docs/front-end-spec/[title].md-->
 
-The information architecture is designed to provide a clear, logical, and role-specific structure for the application. It separates the user experience into two primary contexts: the public-facing (unauthenticated) area and the secure, role-based (authenticated) areas for clients and staff.
+The information architecture is designed to provide a clear, logical, and role-specific structure for the application. It separates the user experience into two primary contexts: the public-facing (unauthenticated) area and the secure, role-based (authenticated) areas.
+
+This architecture is built upon the core technical principle that the application is **strictly online-only**. All data is fetched directly from the network on demand, with no client-side caching or offline capabilities.
 
 ## Site Map / Screen Inventory
 
@@ -55,82 +57,68 @@ graph TD
 
 ## Navigation Structure
 
-**Primary Navigation:** The primary navigation will be a bottom tab bar, providing persistent access to the most critical sections for the user's role. This mobile-first pattern ensures high-priority tasks are always one tap away.
+### Primary and Secondary Navigation
 
-*   **For Clients:**
-    *   **Dashboard:** Main landing screen with key summaries.
-    *   **Submit Rx:** A dedicated, high-visibility tab for the core user action.
-    *   **My Orders:** Quick access to order history and status.
-    *   **Notifications:** Central hub for all updates.
-*   **For Staff (Salesperson/Manager):**
-    *   **Dashboard:** Role-specific overview.
-    *   **Prescriptions:** The queue of pending prescriptions to be processed.
-    *   **Orders:** The main order management view.
-    *   **Notifications:** All relevant staff alerts.
-*   **For Staff (Delivery Person):**
-    *   **My Deliveries:** A focused list of assigned orders.
-    *   **Notifications:** Alerts relevant to their deliveries.
-    *   **Profile:** Access to account settings.
+*   **Primary Navigation:** A bottom tab bar provides persistent access to the most critical sections for the user's role. This mobile-first pattern ensures high-priority tasks are always one tap away.
+    *   **Client:** Dashboard, Submit Rx, My Orders, Notifications
+    *   **Salesperson/Manager:** Dashboard, Prescriptions, Orders, Notifications
+    *   **Delivery Person:** My Deliveries, Notifications, Profile
+*   **Secondary Navigation:** Deeper screens (e.g., order details) are handled through a standard "stack" navigation model. Tapping an item pushes a new screen onto the view stack, with a "Back" button in the header to return.
 
-**Secondary Navigation:** Navigation to deeper screens (e.g., viewing specific order details) will be handled through a standard "stack" navigation model. Users will tap items in a list to push a new screen onto the view stack, with a clear "Back" button in the header to return to the previous screen.
+### Routing and Access Control
 
-**Breadcrumb Strategy:** Traditional web-style breadcrumbs are not applicable to this mobile application. Clear screen titles in the header will serve as the primary method of orientation, ensuring the user always knows where they are in the app.
+In accordance with the simplification plan, navigation will be managed declaratively using the `go_router` package. This approach is essential for handling the application's multi-role architecture.
+
+*   **Centralized Logic:** A single, centralized redirect function in `go_router` will handle all authentication and role-based access control. This eliminates the need for auth checks scattered across individual screens.
+*   **Role-Based Redirects:** Upon login, the router will automatically direct users to the appropriate dashboard (Client, Salesperson, etc.) based on their role.
+*   **Declarative Routes:** The app's entire navigation structure will be defined in a single, clear configuration, mapping directly to the site map.
+
+## Data Presentation and Connectivity
+
+As the application is strictly online-only and does not use `connectivity_plus`, the user interface must be designed around a universal data-fetching pattern. Offline status is inferred exclusively from failed API requests.
+
+**Universal Screen Loading Pattern:**
+1.  **Initial State:** When a screen is opened, a loading indicator (e.g., a spinner) is displayed immediately.
+2.  **Data Fetch:** An API request is made to fetch the necessary data.
+3.  **Success State:** Upon a successful response, the loading indicator is hidden, and the data is rendered on the screen.
+4.  **Failure State:** If the API request fails (due to no network, a server error, or an invalid token), the loading indicator is hidden and replaced with a user-friendly error message and a "Retry" button. If the failure is due to an invalid token, the user will be logged out and redirected to the login screen.
 
 ## Dashboard Content Strategy
 
-The dashboard is the primary landing screen for every authenticated user. Its purpose is to provide an at-a-glance summary of the most relevant information and quick access to the most critical actions for that user's role, directly supporting our "Efficiency is the Feature" design principle.
+The dashboard is the primary landing screen for every authenticated user. Its content is dynamic and fetched from the network each time the screen is viewed, adhering to the universal loading pattern described above.
 
 ### Client Dashboard
 
-The client's dashboard is designed to provide immediate reassurance and easy access to the app's core function.
-
-*   **Primary Call-to-Action (CTA):** A large, prominent "Submit New Prescription" button. This is the client's main job-to-be-done and should be the easiest action to find.
-*   **Recent Order Status Card:** A dynamic card displaying the real-time status of their most recent order (e.g., "Order #12345 - In Preparation"). This directly addresses the "Provide Constant Reassurance" principle by answering the user's most likely question first. Tapping this card will navigate to the order's detail screen.
-*   **Notification Summary:** A small, non-intrusive summary indicating the number of unread notifications (e.g., "You have 2 new notifications"). Tapping this navigates to the full notification list.
+*   **Primary CTA:** A large "Submit New Prescription" button.
+*   **Recent Order Status Card:** Displays the status of the most recent order. Tapping navigates to the order's detail screen.
+*   **Notification Summary:** Indicates the number of unread notifications.
 
 ### Salesperson Dashboard
 
-The salesperson's dashboard is a command center focused on their primary workflow: processing incoming prescriptions.
-
-*   **Actionable Stat Cards:** A set of clear, bold metric cards at the top of the screen to show the current workload:
-    *   **Pending Prescriptions:** A large number indicating how many new submissions are in the queue.
-    *   **Orders in Preparation:** A count of orders currently being worked on.
-*   **Primary Task Button:** A "Go to Prescription Queue" button that takes them directly to the list of pending prescriptions to begin processing.
-*   **Recent Activity Feed (Optional):** A short list of the 3-5 most recent events (e.g., "Prescription #P67890 submitted by J. Doe," "Order #12344 marked Ready for Delivery").
+*   **Actionable Stat Cards:**
+    *   **Pending Prescriptions:** A count of new submissions in the queue.
+    *   **Orders in Preparation:** A count of orders being worked on.
+*   **Primary Task Button:** A "Go to Prescription Queue" button.
 
 ### Manager Dashboard
 
-The manager's dashboard provides a high-level overview of business operations and highlights urgent issues that require attention.
+*   **Key Performance Indicators (KPIs):** Summary cards for daily metrics (Total Orders, Total Revenue, etc.).
+*   **Urgent Alerts Section:**
+    *   **Low Stock Warning:** A high-visibility alert (e.g., "⚠️ 5 items are low on stock"). **For the MVP, this will be a non-functional UI element**, as the underlying report is a post-MVP feature.
+*   **Quick Links:** Navigation buttons to core administrative sections (Manage Medications, Staff, Clients).
 
-*   **Key Performance Indicators (KPIs):** A series of summary cards displaying critical real-time business metrics for the day:
-    *   Total Orders
-    *   Total Revenue
-    *   New Prescriptions Submitted
-*   **Urgent Alerts Section:** A high-visibility section for critical alerts. The most important alert will be:
-    *   **Low Stock Warning:** (e.g., "⚠️ 5 items are low on stock"). Tapping this alert navigates directly to the low-stock report.
-    *   **Note for MVP:** As the low-stock report is a post-MVP feature, this alert will be a non-functional UI element or hidden in the initial release. The interaction (tapping to navigate) will be implemented in a future phase.
-*   **Quick Links:** A set of navigation buttons for easy access to the core administrative sections:
-    *   Manage Medications
-    *   Manage Staff
-    *   Manage Clients
+## In-App Alerts / Notifications
 
-### Dashboard Empty States
+To maintain a minimal dependency footprint, the app will not use a real-time push notification service. The "Notifications" feature will function as an in-app alert system.
 
-"Empty states" occur when there is no data to display, such as on a user's first login or when a task queue is empty. These states are designed to be informative, guiding, and encouraging.
+*   **Fetch on Demand:** A list of notifications is fetched from an API endpoint only when the user navigates to the Notifications screen.
+*   **No Background Updates:** The notification count/indicator will update upon app launch or when the dashboard is loaded, reflecting the latest state from the server at that moment.
 
-*   **Client Dashboard (First-Time Use):**
-    A new client has no order history. Instead of showing a blank space where the "Recent Order Status Card" would be, the dashboard will display a welcoming "Getting Started" card.
-    *   **Content:**
-        *   **Headline:** "Welcome to a simpler pharmacy experience!"
-        *   **Body:** "Submit your first prescription to see its status here. It's fast, easy, and secure."
-    *   **Interaction:** This card will be tappable and will navigate the user directly to the "Submit Prescription" screen, providing a clear and immediate path to their primary goal.
-*   **Salesperson Dashboard (Empty Queue):**
-    When the prescription queue is empty, it signifies that all work is complete. The dashboard should reflect this as a positive achievement.
-    *   **Content:**
-        *   The "Pending Prescriptions" stat card will clearly display "0".
-        *   The main content area will display a positive confirmation message.
-        *   **Headline:** "All Caught Up!"
-        *   **Body:** "The prescription queue is clear. You'll be notified when new submissions arrive."
-        *   **Visual:** A simple, positive icon (e.g., a checkmark ✅) will accompany the message.
+## Dashboard Empty States
+
+Empty states are displayed after a successful API call returns no data.
+
+*   **Client Dashboard (First-Time Use):** A "Getting Started" card is shown instead of the "Recent Order Status" card. It contains a welcome message and a button that navigates directly to the "Submit Prescription" screen.
+*   **Salesperson Dashboard (Empty Queue):** The "Pending Prescriptions" stat card will display "0". The main content area will show a positive confirmation message like "All Caught Up! The prescription queue is clear." with a checkmark icon.
 
 ---

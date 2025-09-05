@@ -1,45 +1,42 @@
-# Animation & Micro-interactions
+# UI Feedback and Animation Guidelines
 
 <!--docs/front-end-spec/[title].md-->
 
-In this application, animation is not for decoration; it is a functional tool used to enhance clarity, provide feedback, and build user confidence. Our approach is to use motion to make the interface feel more responsive and intuitive, directly supporting our design principles of "Efficiency is the Feature" and "Provide Constant Reassurance." All animations will be subtle, quick, and purposeful to avoid distracting from the user's primary task.
+## Introduction
 
-## Motion Principles
+Animation is not a feature. It is a by-product of using standard Flutter widgets. We will not implement custom animations, transitions, or effects. The focus is on leveraging the built-in, default behaviors of the Flutter framework to provide essential user feedback without adding any implementation overhead.
 
-1.  **Functional & Purposeful:** Every animation must have a clear purpose, such as guiding the user's attention, confirming an action, or indicating a change in state. We will avoid purely decorative motion.
-2.  **Responsive & Immediate:** The interface must provide immediate feedback for every user interaction. Tapping a button or selecting an item should trigger a subtle but instant visual response, making the app feel fast and reliable.
-3.  **Consistent & Predictable:** Animation patterns will be used consistently throughout the application. For example, the transition for navigating to a new screen will always be the same, helping users build a predictable mental model of the app's structure.
-4.  **Subtle & Unobtrusive:** Animations will be brief and understated, enhancing the user experience without getting in the way. The goal is to assist, not to distract or cause delays.
+## Guiding Principles
 
-## Key Animations
+1.  **Leverage Framework Defaults:** All UI feedback will be derived from the default behavior of standard Material Design widgets (e.g., `ElevatedButton`, `InkWell`, `CircularProgressIndicator`). No custom animation code will be written.
+2.  **Clarity Over Decoration:** The only "animations" permitted are those that serve a critical function, such as indicating a loading state. All purely decorative or aesthetic motion is prohibited.
+3.  **Minimal Implementation:** The method for providing user feedback must be the one that requires the least amount of code and no new dependencies.
+4.  **Consistency Through Simplicity:** The UI will be consistent because we will use the same standard widgets for the same purposes everywhere. We will not create custom animated components.
 
-The following are specific, high-impact animations and micro-interactions that will be implemented to improve the user experience.
+## Approved UI Feedback Mechanisms
 
-*   **State Transitions:** Tapping any interactive element (buttons, list items) will trigger a subtle visual feedback, like the Material Design "ripple" effect. This confirms the system has registered the user's touch. (Duration: ~200ms, Easing: Linear)
-*   **Screen Navigation:** When navigating deeper into a task (e.g., from the order list to an order detail screen), the new screen will slide in from the right. When returning, it will slide out to the right. This reinforces the hierarchical structure of the app. (Duration: ~300ms, Easing: Decelerate)
-*   **Loading Indicators:** For any asynchronous action that takes more than a moment (e.g., uploading a prescription, fetching a list of orders), a clear, non-blocking loading indicator (e.g., a circular progress spinner) will be displayed. This manages user expectations and prevents them from thinking the app is frozen.
-*   **Confirmation Feedback:** Upon a successful critical action, like submitting a prescription, the confirmation message and icon (e.g., ✅ "Submission Successful!") will subtly animate in (e.g., a gentle fade-in and scale-up). This provides a moment of positive reinforcement and clearly communicates success. (Duration: ~400ms, Easing: Overshoot)
+The following are the only approved methods for providing visual feedback in the application.
 
-## Performance & Accessibility Considerations
+*   **Tap Feedback (Ripple Effect):** Interactive elements like buttons, cards, and list items will use the default Material Design ripple effect provided by widgets like `InkWell` or built into buttons. This requires no extra implementation.
+*   **Loading Indicators:** For any asynchronous network call, a standard `CircularProgressIndicator` will be displayed. This clearly communicates a "loading" state to the user and is a core Flutter widget.
+*   **Screen Navigation:** We will use `go_router` with its default page transition. No custom slide, fade, or scale transitions will be created. The standard platform-adaptive transition provided by Flutter is sufficient.
+*   **Confirmation & Error Feedback:** For feedback on completed actions (e.g., "Submission Successful," "Invalid Password"), a `SnackBar` will be used. This is a simple, standard, and non-blocking way to display temporary messages.
 
-To ensure our animation strategy enhances the experience for all users without compromising performance or inclusivity, the following requirements must be met.
+## Prohibited Implementations
+
+To maintain alignment with the simplification plan, the following are explicitly forbidden:
+
+*   **Custom Screen Transitions:** Do not use `CustomTransitionPage` or similar APIs in `go_router` to alter navigation animations.
+*   **Custom Animated Feedback:** Do not implement custom animations for success/error messages (e.g., a checkmark that animates in). Use a `SnackBar`.
+*   **`AnimationController`:** Avoid using `AnimationController`, `AnimatedBuilder`, or other explicit animation APIs. If a feature seems to require them, it is a sign that the feature's UI is too complex for the scope of this project and must be simplified.
+*   **Third-Party Animation Packages:** No new dependencies for animation (like `lottie` or `rive`) are permitted.
+
+## Performance & Accessibility
 
 ### Performance
 
-*   **Risk:** Poorly implemented animations can negatively impact performance on lower-end devices, violating our goal of a "fast and reliable" app.
-*   **Mitigation:**
-    1.  All animations must be hardware-accelerated to ensure smoothness (standard Flutter animations typically handle this well).
-    2.  Any custom animations must be profiled to ensure they maintain a consistent 60 FPS and do not cause frame drops ("jank").
-    3.  The "Subtle & Unobtrusive" principle also applies to performance. An animation that causes a noticeable delay must be revised or removed.
+By exclusively using standard Flutter widgets and their default animations, we rely on the performance optimizations built into the framework. No manual performance profiling of animations is required, as we are not creating any.
 
 ### Accessibility
 
-*   **Risk:** For users with vestibular disorders or motion sensitivity, animations can be a significant barrier to usability.
-*   **Mitigation:**
-    1.  To comply with our WCAG AA target, the application **must** respect the system-level "Remove animations" or "Reduce motion" setting in Android's accessibility options.
-    2.  When this setting is enabled, all non-essential animations will be disabled or replaced. For example:
-        *   Screen transitions will become simple cross-fades instead of slides.
-        *   The "Confirmation Feedback" animation will be disabled, with the message appearing instantly.
-    3.  Essential feedback animations, such as loading indicators, will remain as they communicate a necessary system state.
-
----
+The project will not implement a custom "reduce motion" or "remove animations" mode. The default animations provided by the Material widget set are minimal and functional. The complexity of implementing a separate mode for disabling these subtle effects directly contradicts the project's primary goal of simplicity and a minimal codebase. We will rely on the framework's default accessibility features.

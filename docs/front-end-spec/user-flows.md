@@ -29,7 +29,7 @@ graph TD
     F --> G;
     G --> H[Confirm Image Preview];
     H --> I[Tap 'Submit'];
-    I --> J[App Compresses & Uploads Image];
+    I --> J[App Uploads Image];
     J --> K{Submission Status};
     K -- Success --> L[Display Confirmation Screen with Reference #];
     K -- Failure --> M[Display Error Message];
@@ -47,8 +47,13 @@ To fulfill the "Provide Constant Reassurance" principle, the confirmation screen
 
 ### Edge Cases & Error Handling:
 
-*   **Invalid File:** If the user selects a file that is not a supported image format (JPG, PNG) or exceeds the size limit (5MB), the app will display an inline error message immediately upon selection, preventing an upload attempt.
-*   **Upload Failure:** If the upload fails due to a network error or a server issue, a clear, non-dismissible message will appear (e.g., "Upload Failed. Please check your connection and try again.") with a "Retry" button.
+Error handling is centralized around the server's response after an upload attempt. The client application does not perform pre-upload validation on file type or size.
+
+*   **Upload Failure:** If the upload fails for any reason, a clear, non-dismissible message will appear with a "Retry" button. This single failure state covers multiple scenarios:
+    *   **Network Error:** The device is offline or has an unstable connection.
+    *   **Server-Side Validation Error:** The server rejects the file (e.g., "Invalid file type. Please upload a JPG or PNG." or "File is too large. Please limit to 5MB.").
+    *   **Server Issue:** A general server error occurred during processing.
+    The message will be user-friendly (e.g., "Submission Failed. Please check your connection or file and try again.") and the "Retry" button will return the user to the image preview screen (Step H).
 *   **User Cancels:** If the user cancels the image selection process, they are returned to the "Submit Prescription" screen without any change.
 *   **Authentication Error:** If the user's session has expired, the app will prevent the submission and gracefully redirect them to the login screen with an explanatory message.
 

@@ -75,6 +75,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   '/medications/{id}':
+    get:
+      summary: Get a specific medication
+      tags:
+        - Medications
+      security:
+        - bearerAuth: []
+      description: >-
+        Manager-only endpoint to retrieve the full details of a single
+        medication by its ID.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the medication to retrieve.
+      responses:
+        '200':
+          description: Medication details retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Medication'
+        '401':
+          description: Unauthenticated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Medication not found.
     put:
       summary: Update a medication
       tags:
@@ -311,4 +340,4 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
+      bearerFormat: Sanctum Token

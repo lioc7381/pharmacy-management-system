@@ -1,4 +1,4 @@
-# Epic 3: Core Order Fulfillment Workflow
+# Epic 3: Core Order Fulfillment Workflow (Simplified Architecture)
 
 <!--docs/prd/[title].md-->
 
@@ -12,11 +12,14 @@ so that I can begin processing new client submissions in a timely manner.
 
 ### Acceptance Criteria
 
-1.  A secure API endpoint is created that returns a list of all prescriptions with a 'pending' status.
-2.  The Flutter application has a "Prescription Queue" screen, accessible only to authenticated staff with the 'Salesperson' role or higher.
-3.  The screen calls the API and displays the pending prescriptions in a list, showing key information like the client's name and submission time.
-4.  If there are no pending prescriptions, a message "No pending prescriptions to process" is displayed.
-5.  Tapping on a prescription in the list navigates the user to the processing screen (to be built in Story 3.2).
+1.  **Backend (Laravel):** A secure API endpoint (`GET /api/prescriptions?status=pending`) is created.
+    *   Access is protected by route middleware, restricted to users with 'Salesperson' or 'Manager' roles.
+    *   The response MUST be formatted using a `PrescriptionResourceCollection` to ensure a consistent data structure.
+2.  **Frontend (Flutter):** The Flutter application defines a route for the "Prescription Queue" screen within `go_router`.
+    *   Access to this route is protected by a redirect guard that verifies the user is authenticated and has the appropriate role.
+3.  **Frontend (Flutter):** The screen's corresponding `PrescriptionProvider` (using `ChangeNotifier`) will fetch the data using the `http` package. The UI will listen to the provider and display the list of prescriptions, showing the client's name and submission time.
+4.  **Frontend (Flutter):** If the provider's list of prescriptions is empty, a message "No pending prescriptions to process" is displayed.
+5.  **Frontend (Flutter):** Tapping on a prescription uses `go_router` to navigate the user to the processing screen (e.g., `/prescriptions/123/process`), passing the prescription ID as a path parameter.
 
 ## Story 3.2: Process Prescription into an Order
 
@@ -26,24 +29,27 @@ so that I can fulfill the client's request and begin the preparation workflow.
 
 ### Acceptance Criteria
 
-**UI & Interaction:**
+**UI & Interaction (Flutter):**
 
-1.  Given the Salesperson is on the 'Prescription Processing' screen, Then the client's uploaded prescription image is displayed prominently.
-2.  Given the Salesperson is processing a prescription, Then they can search for medications by name and add them to a list, specifying a quantity for each. **The UI must display the current stock availability for each medication as it is being added.**
+1.  On the 'Prescription Processing' screen, the client's uploaded prescription image is displayed prominently.
+2.  As the Salesperson searches for and adds medications, the UI MUST fetch and display the **real-time** stock availability for each item. In accordance with the online-only architecture, no stock data will be cached on the client.
 
-**Backend - Happy Path & Business Logic:**
+**Backend (Laravel) - Happy Path & Business Logic:**
 
-3.  When the 'Create Order' API endpoint is called, it MUST first validate that the `current_quantity` for each medication in the request is greater than or equal to the requested quantity.
-4.  Given a successful stock validation, the creation of the order and all related database updates MUST occur within a single database transaction to ensure data integrity.
-5.  Given a successful transaction, the `current_quantity` for each medication in the `Medications` table MUST be decremented by the ordered quantity.
-6.  Given a successful transaction, the `status` of the corresponding record in the `Prescriptions` table MUST be updated to 'Processed'.
-7.  Given a successful transaction, a new record MUST be created in the `Orders` table with a `status` of 'In Preparation'.
-8.  Given a successful transaction, a new record MUST be created in the `Notifications` table for the client, containing the new Order ID.
+3.  A `CreateOrderRequest` FormRequest class will handle all incoming validation for the `POST /api/orders` endpoint. It must validate the structure of the incoming medication list and quantities.
+4.  The `OrderService` will receive the validated data array directly from the `CreateOrderRequest` (`$request->validated()`).
+5.  The `OrderService` MUST wrap all database operations within a single `DB::transaction()` block to ensure atomicity. The transaction will:
+    a.  Perform a final check to ensure the `current_quantity` for each medication is sufficient, locking the rows to prevent race conditions.
+    b.  Decrement the `current_quantity` for each medication in the `Medications` table.
+    c.  Update the `status` of the corresponding `Prescription` to 'Processed'.
+    d.  Create a new `Order` with a `status` of 'In Preparation'.
+    e.  Create a new `Notification` for the client, containing the new Order ID.
+6.  Upon a successful transaction, the API will return the newly created order, formatted via an `OrderResource`.
 
 **Backend & UI - Exception/Error Handling:**
 
-9.  When the 'Create Order' API endpoint is called and at least one medication has insufficient stock, Then the API MUST return a `409 Conflict` error with a message identifying the out-of-stock item(s).
-10. Given the API returns a `409 Conflict` error for insufficient stock, Then the frontend MUST display a clear, non-dismissible error message to the Salesperson, and the order creation process MUST be halted.
+7.  If the stock validation within the `OrderService` fails, the service MUST throw an exception that results in a `409 Conflict` HTTP response, with a message identifying the out-of-stock item(s).
+8.  If the Flutter app receives a `409 Conflict` response, the `OrderProvider` will update a simple `errorMessage` state property (e.g., `String? errorMessage`). The UI will listen to this property and display a persistent, non-dismissible error message (e.g., a banner or dialog) until the user takes action to correct the order. The `ViewEvent` pattern is explicitly forbidden.
 
 ## Story 3.3: Reject Invalid Prescription
 
@@ -53,11 +59,11 @@ so that the submission is removed from the active queue and the client is inform
 
 ### Acceptance Criteria
 
-1.  Given the Salesperson is on the 'Prescription Processing' screen, a 'Reject' button is available.
-2.  When the 'Reject' button is tapped, the system prompts the Salesperson to enter a mandatory reason for the rejection (e.g., "Image is blurry," "Prescription is incomplete").
-3.  Upon confirming the rejection, a secure API endpoint updates the prescription's status to 'Rejected' and saves the rejection reason.
-4.  The system generates an in-app notification for the client informing them that their submission was rejected and includes the reason provided by the Salesperson.
-5.  A rejected prescription is removed from the main 'pending' queue for Salespeople.
+1.  On the 'Prescription Processing' screen, a 'Reject' button is available. Tapping it shows a simple dialog to input a rejection reason.
+2.  **Backend (Laravel):** A `RejectPrescriptionRequest` FormRequest will validate the request, ensuring the `reason` field is present and non-empty.
+3.  **Backend (Laravel):** The corresponding `PrescriptionService` method will update the prescription's status to 'Rejected' and save the rejection reason.
+4.  **Backend (Laravel):** The service will then create an in-app notification for the client, informing them of the rejection and including the reason.
+5.  A rejected prescription no longer appears in the API response for the 'pending' prescription queue.
 
 ## Story 3.4: Manage Order Status
 
@@ -67,10 +73,11 @@ so that I can track its progress through the fulfillment workflow and prepare it
 
 ### Acceptance Criteria
 
-1.  An "Order Management" screen allows the Salesperson to view orders, filterable by status (e.g., 'In Preparation', 'Ready for Delivery').
+1.  An "Order Management" screen, protected by the `go_router` guard for staff roles, displays a list of orders fetched from the API.
 2.  The Salesperson can change an order's status from 'In Preparation' to 'Ready for Delivery'.
-3.  When an order's status is updated to 'Ready for Delivery', the system sends an in-app notification to the client.
-4.  The API endpoints for updating status are protected and accessible only to authorized staff.
+3.  **Backend (Laravel):** This action is handled by a secure API endpoint (e.g., `PATCH /api/orders/{order}`). Access is controlled via route middleware.
+4.  **Backend (Laravel):** An `UpdateOrderStatusRequest` FormRequest validates that the new status is a valid transition.
+5.  **Backend (Laravel):** When the `OrderService` updates the status to 'Ready for Delivery', it also generates an in-app notification for the client.
 
 ## Story 3.5: Fulfill Delivery
 
@@ -80,10 +87,10 @@ so that the system has an accurate, real-time record of the order's completion.
 
 ### Acceptance Criteria
 
-1.  A "My Deliveries" screen is available to users with the 'Delivery' role, showing a list of orders assigned to them with the status 'Ready for Delivery'.
-2.  The Delivery Person can update an order's status to 'Completed' upon successful delivery.
-3.  The Delivery Person can update an order's status to 'Failed Delivery' if the delivery could not be completed.
-4.  Once an order's status is updated to 'Completed' or 'Failed Delivery', it is removed from the Delivery Person's active queue.
-5.  The system sends a final notification to the client when their order is marked as 'Completed'.
+1.  A "My Deliveries" screen is available, protected by a `go_router` guard that restricts access to users with the 'Delivery' role. It lists orders with the status 'Ready for Delivery' assigned to them.
+2.  The Delivery Person can update an order's status to 'Completed' or 'Failed Delivery'.
+3.  **Backend (Laravel):** The status update endpoint uses a `FormRequest` to validate the final status and is protected by middleware to ensure only the assigned delivery person (or a manager) can update it.
+4.  Once an order's status is updated to 'Completed' or 'Failed Delivery', it is removed from the Delivery Person's active queue on the next refresh.
+5.  **Backend (Laravel):** The `OrderService` sends a final notification to the client when their order is marked as 'Completed'.
 
 ---

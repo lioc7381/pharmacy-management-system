@@ -4,7 +4,16 @@
 
 ## Overall UX Vision
 
-The user experience must be modern, intuitive, and efficient, directly contrasting the high-friction manual processes it replaces. The design should inspire confidence and trust, ensuring that both customers and staff perceive the application as a reliable and streamlined tool. Key principles are clarity, simplicity, and speed, minimizing the number of steps required to complete core tasks like submitting a prescription or processing an order.
+The user experience will prioritize a clear, straightforward, and efficient digital workflow. The primary goal is to replace complex manual processes with a simple, step-by-step digital interface that is predictable and reliable **when connected to the network**. Key principles are clarity, simplicity, and speed, minimizing the number of steps required to complete core tasks like submitting a prescription or processing an order.
+
+## Technical & UX Constraints
+
+The following constraints, derived from the project's simplification plans, are foundational to the UI/UX design and must be adhered to:
+
+1.  **Online-Only Operation:** The application requires a constant and stable internet connection to function. There will be no data caching or offline capabilities. The UI must be designed to handle network failures on a per-action basis (e.g., showing an error message with a "retry" option after a failed request) rather than supporting a global offline mode.
+2.  **Server-Authoritative Validation:** The client will perform only basic input validation (e.g., checking for empty fields). All critical validation for data, business rules, and file uploads (e.g., prescription image type and size) will be handled exclusively by the server. The UI should be prepared to display clear error messages returned from the API.
+3.  **Simplified Security Model:** For the MVP, authentication tokens are stored using the device's standard, non-secure preferences (`shared_preferences`). The application's security model relies on API-level authorization and assumes a non-compromised device environment.
+4.  **Stateless Authentication:** The application will assume that a stored authentication token is always valid and will not implement logic for token refreshing or proactive expiration checks. If an API call fails due to an invalid token, the user will be logged out and returned to the login screen.
 
 ## Key Interaction Paradigms
 
@@ -28,7 +37,7 @@ To ensure a consistent and intuitive user experience, the application will use a
     *   Management (leading to sub-screens for Client, Staff, and Medication management)
     *   Notifications
 
-Secondary navigation (e.g., navigating from a list to a detail view) will be handled through standard screen-to-screen transitions.
+Secondary navigation (e.g., navigating from a list to a detail view) will be handled through standard screen-to-screen transitions, managed by a declarative routing solution.
 
 ## Responsive Design
 

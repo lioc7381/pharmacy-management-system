@@ -1,5 +1,5 @@
-version: 4.42.1
-installed_at: '2025-09-01T10:00:56.496Z'
+version: 4.43.0
+installed_at: '2025-09-04T18:00:45.177Z'
 install_type: full
 agent: null
 ides_setup:
@@ -9,6 +9,7 @@ ides_setup:
   - gemini
   - qwen-code
   - crush
+  - github-copilot
 expansion_packs: []
 files:
   - path: .bmad-core/working-in-the-brownfield.md
@@ -17,14 +18,14 @@ files:
   - path: .bmad-core/user-guide.md
     hash: fa8776b4e0bfa3f7
     modified: false
+  - path: .bmad-core/install-manifest.yaml.bak
+    hash: 0b7ef36377ea7f1c
+    modified: false
   - path: .bmad-core/install-manifest.yaml
-    hash: a1ac8e2f52673658
+    hash: 0b7ef36377ea7f1c
     modified: false
   - path: .bmad-core/enhanced-ide-development-workflow.md
     hash: 39beb3516c070e2b
-    modified: false
-  - path: .bmad-core/core-config.yaml.bak
-    hash: 755287de4eea7055
     modified: false
   - path: .bmad-core/core-config.yaml
     hash: 94ce5b2faad48235
@@ -177,7 +178,7 @@ files:
     hash: 62b0bf50648906b0
     modified: false
   - path: .bmad-core/data/bmad-kb.md
-    hash: 57f0e9ae0e54b8e3
+    hash: 1d38eeee61c55bf9
     modified: false
   - path: .bmad-core/checklists/story-draft-checklist.md
     hash: 0bc8a90678dba318

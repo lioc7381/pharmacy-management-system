@@ -267,7 +267,7 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
+      bearerFormat: Sanctum Token
       description: >-
         Authentication token issued upon successful login. Provide the token in
         the Authorization header as `Bearer <token>`.

@@ -2,66 +2,73 @@
 
 <!--docs/front-end-spec/[title].md-->
 
-This section provides a bridge between the abstract user flows and the final visual design. It outlines the source of truth for high-fidelity designs and specifies the layout and key components for the application's most critical screens.
+This section outlines the layout and key components for the application's screens.
 
-**Source of Truth:** This document is the single source of truth for all UI/UX specifications. The screen layouts described below are the final designs and definitive blueprints for development. They define the required elements, their arrangement, and their behavior, and must be implemented directly from these specifications.
+**Source of Truth:** This document is the single source of truth for all UI/UX specifications. The screen layouts described below are the final blueprints for development and have been designed to be implemented using the minimal set of dependencies and architectural patterns mandated by the project plan.
+
+## Guiding Architectural Principles on UI
+
+The user experience is a direct reflection of the underlying architecture. The following principles from the simplification plan dictate the behavior of the UI:
+
+*   **Strict Online-Only Operation:** The application has no offline caching. Every piece of data is fetched from the network on demand. The UI will not proactively check for network status; it will only react to failed network requests.
+*   **Stateless Interaction Model:** UI components will not maintain complex state. Multi-step actions are vulnerable to interruption. If a network request fails mid-process due to an invalid token, the user will be logged out, and any unsaved work will be lost.
+*   **Failure-Driven Error Handling:** The primary way the user is notified of a problem (e.g., no internet connection, invalid data) is after a network request fails. The UI will display an error message and typically require the user to retry the action manually.
 
 ## Key Screen Layouts
 
-The following are conceptual layouts for the core screens identified in the Information Architecture and User Flows. They define the purpose, key elements, and interaction model for each view, serving as the definitive blueprint for front-end development.
-
 ### Screen: Prescription Submission (Client)
 
-*   **Purpose:** To provide a fast, simple, and reassuring interface for a client to upload a prescription image. The design must minimize cognitive load and guide the user to a successful submission with confidence.
+*   **Purpose:** To provide a clear and functional interface for a client to upload a prescription image.
 *   **Key Elements:**
-    *   **Image Placeholder/Preview:** A large, central area that either prompts the user to add an image or displays a clear preview of the selected image.
+    *   **Image Placeholder/Preview:** A central area that either prompts the user to add an image or displays a preview of the selected image.
     *   **"Select Image" Button:** A primary button that opens the device's native camera or photo gallery selector.
-    *   **"Submit" Button:** The final call-to-action, which should be disabled until an image has been selected and previewed.
-    *   **Helper Text:** A brief, clear instruction (e.g., "Please upload a clear photo of your entire prescription.").
+    *   **"Submit" Button:** The final call-to-action, which is disabled until an image has been selected.
+    *   **Helper Text:** A brief instruction (e.g., "Please upload a clear photo of your prescription.").
 *   **Interaction Notes:**
     *   Upon tapping "Select Image," the user is presented with a choice ("Take Photo" or "Choose from Gallery").
-    *   Once an image is selected, it appears in the preview area. The user should have an option to clear the selection and choose a different image.
-    *   Tapping "Submit" will display a non-blocking loading indicator while the image is compressed and uploaded.
+    *   Once an image is selected, it appears in the preview area.
+    *   Tapping "Submit" will display a loading indicator and attempt to upload the image.
+    *   **On Failure:** If the upload fails (e.g., due to a network issue), an error message will be displayed. The user must tap "Submit" again to retry the upload. If the failure is due to an invalid token, the user will be redirected to the login screen.
 
 ### Screen: Prescription Processing (Salesperson)
 
-*   **Purpose:** To provide an efficient, all-in-one interface for a salesperson to review a prescription, create an accurate order, and handle exceptions like rejection or out-of-stock items. The layout must support the dual tasks of viewing an image and building an order simultaneously.
+*   **Purpose:** To provide a functional interface for a salesperson to review a prescription image and create a corresponding order based on available medications.
 *   **Key Elements:**
-    *   **Prescription Image Viewer:** A prominent, zoomable view of the client's uploaded prescription image.
-    *   **Medication Search Input:** A powerful search bar with real-time results to quickly find medications in the catalog.
-    *   **Order Item List:** A running list of medications added to the order, showing name, quantity, price, and a real-time stock status indicator for each item.
-    *   **Order Summary:** A section displaying the subtotal and total price, which updates as items are added or removed.
-    *   **Primary Actions:** Clearly distinct buttons for "Create Order" and "Reject Prescription".
+    *   **Prescription Image Viewer:** A view of the client's uploaded prescription image.
+    *   **Medication Search Input:** A text field and a "Search" button to find medications in the catalog.
+    *   **Order Item List:** A list of medications that have been added to the current order, showing name and quantity.
+    *   **Order Summary:** A section displaying the subtotal and total price.
+    *   **Primary Actions:** Buttons for "Create Order" and "Reject Prescription".
 *   **Interaction Notes:**
-    *   The layout should be optimized for a mobile screen, potentially using a top/bottom split view or a tabbed interface to switch between the image and the order form.
-    *   As the salesperson types in the search bar, a list of matching medications appears. Tapping a result adds it to the order list with a default quantity of 1.
-    *   The quantity of each item in the list should be easily editable.
-    *   The "Create Order" button remains disabled until at least one valid, in-stock medication is added to the list.
-    *   Tapping "Reject Prescription" will open a modal dialog requiring a reason for rejection before proceeding.
+    *   **Search is manual.** The salesperson types a medication name and taps the "Search" button. A loading indicator is shown, and a list of results is displayed upon success.
+    *   Adding an item to the order list does **not** perform a real-time stock check. The list is for draft purposes only.
+    *   The "Create Order" button is enabled once at least one medication is added. Tapping it sends the entire order to the backend for validation.
+    *   **On Submission Failure:** If the order creation fails for any reason (e.g., an item is out of stock, network error), the entire submission is rejected. An error message will be displayed, and the salesperson must manually correct the order (e.g., remove the out-of-stock item) and tap "Create Order" again.
+    *   **Token Invalidation Risk:** This is a multi-step process. If the salesperson's session becomes invalid before they submit the order, they will be logged out upon tapping "Create Order," and **all progress on the current order will be lost.**
 
 ### Screen: Manager Dashboard
 
-*   **Purpose:** To serve as the manager's command center, providing a high-level, at-a-glance overview of business operations and immediately surfacing critical issues that require their attention. The design must facilitate proactive, data-driven decision-making.
+*   **Purpose:** To serve as the manager's entry point, providing a summary view of key business metrics and direct links to management functions.
 *   **Key Elements:**
-    *   **KPI Summary Cards:** A row of prominent, easy-to-read cards at the top of the screen displaying the day's key metrics (e.g., "Total Orders," "Total Revenue," "New Prescriptions").
-    *   **Urgent Alerts Section:** A visually distinct section directly below the KPIs, designed to draw immediate attention. It will feature a high-priority alert for "Low Stock Items" with a clear warning icon (⚠️) and a count of affected items.
-    *   **Management Quick Links:** A grid or list of clearly labeled buttons that provide one-tap access to the core administrative functions ("Manage Medications," "Manage Staff," "Manage Clients").
+    *   **KPI Summary Cards:** A row of cards displaying key metrics (e.g., "Total Orders," "Total Revenue," "New Prescriptions").
+    *   **Alerts Section:** A section for important notifications, such as a "Low Stock Items" alert with a count of affected items.
+    *   **Management Quick Links:** A grid or list of buttons for navigation ("Manage Medications," "Manage Staff," "Manage Clients").
 *   **Interaction Notes:**
-    *   The KPI cards are primarily for quick-look information. In a future version, tapping them could lead to more detailed reports.
-    *   Tapping the "Low Stock Items" alert is a critical action. It will navigate the manager directly to the low-stock report screen, bypassing any intermediate menus.
-    *   Each "Quick Link" button navigates directly to its corresponding management screen.
+    *   The data on this screen is fetched from the network each time the user navigates to it. **It does not update in real-time.**
+    *   To see the latest data, the user must perform a "pull-to-refresh" gesture, which will trigger a new network request.
+    *   Tapping the "Low Stock Items" alert navigates the manager to the relevant report screen, fetching that data on demand.
 
 ### Screen: Salesperson Order Management View
 
-*   **Purpose:** To provide the salesperson with a clear, organized, and actionable view of the entire order fulfillment pipeline. The interface must make it easy to track orders, understand their current status, and perform the necessary actions to move them through the workflow.
+*   **Purpose:** To provide the salesperson with an organized view of orders, allowing them to see orders based on their current status.
 *   **Key Elements:**
-    *   **Status Tabs:** A tabbed navigation bar at the top of the screen to filter the order list by its most relevant statuses (e.g., "In Preparation," "Ready for Delivery," "Completed"). This is the primary organizational paradigm for the screen.
-    *   **Order List:** Below the tabs, a scrollable list of orders that dynamically updates based on the selected status tab.
-    *   **Order Card:** Each item in the list will be a self-contained card summarizing the most important order information: Order ID, Client Name, Time since order creation, and Total Amount.
-    *   **Search/Filter Bar (Optional but Recommended):** A search bar above the tabs to allow finding a specific order by ID or client name, which is crucial for handling customer inquiries.
+    *   **Status Tabs:** A tabbed navigation bar to filter the order list by status (e.g., "In Preparation," "Ready for Delivery," "Completed").
+    *   **Order List:** A scrollable list of orders corresponding to the selected status tab.
+    *   **Order Card:** Each item in the list summarizes key order information: Order ID, Client Name, and Total Amount.
 *   **Interaction Notes:**
-    *   The screen will default to the "In Preparation" tab, as this is the most actionable queue for the salesperson.
-    *   Tapping on an Order Card will navigate the user to a detailed "Order Details" screen where they can perform status updates (e.g., "Mark as Ready for Delivery") or other management tasks.
-    *   The list should support a "pull-to-refresh" gesture to fetch the latest order data.
+    *   The screen defaults to the "In Preparation" tab, triggering an initial network request for those orders.
+    *   Switching to a different tab triggers a **new network request** to fetch the orders for that status. A loading indicator will be shown during the fetch.
+    *   The list does not update automatically. The user must use a "pull-to-refresh" gesture to fetch the latest order data for the currently viewed tab.
+    *   Tapping on an Order Card navigates the user to the "Order Details" screen.
 
 ---
