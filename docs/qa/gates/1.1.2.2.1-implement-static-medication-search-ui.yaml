@@ -1,0 +1,16 @@
+---
+gate:
+  story: 1.2.2.1
+  title: Implement Static Medication Search UI
+  status: CONCERNS
+  reviewer: Quinn (Test Architect)
+  date: 2025-09-05
+  link_to_qa_results: "docs/stories/1.2.2.1.Implement-Static-Medication-Search-UI.md.md#qa-results"
+  summary: |
+    The implementation is functionally correct and adheres to coding/architectural standards.
+    However, the complete absence of widget tests for the new UI components is a critical
+    quality gap that introduces significant risk for future maintenance and regression.
+  remediation_steps:
+    - "Add widget tests for `MedicationSearchScreen` to verify the presence of key UI elements (TextField, ListView)."
+    - "Add widget tests for `MedicationListItem` to verify correct data display for both 'In Stock' and 'Out of Stock' states."
+---
